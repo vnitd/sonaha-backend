@@ -1,9 +1,7 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
@@ -17,7 +15,6 @@ import {
 } from '@nestjs/common';
 import { AlbumService } from './album.service';
 import { CreateAlbumDto, createVideoDto } from './dto/create-album.dto';
-import { UpdateAlbumDto } from './dto/update-album.dto';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
 import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';

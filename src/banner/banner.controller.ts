@@ -52,7 +52,6 @@ export class BannerController {
   async findAll(): Promise<any[]> {
     return await this.bannerService.findAllBanner();
   }
-
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

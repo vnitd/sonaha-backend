@@ -1,5 +1,5 @@
 import { ApiHideProperty, ApiProperty } from "@nestjs/swagger";
-import { IsDate, IsDateString, IsNotEmpty } from "class-validator";
+import {  IsDateString, IsNotEmpty } from "class-validator";
 
 export class CreateBannerDto {
   @ApiProperty({ description: "Tiêu đề của banner" })

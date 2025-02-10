@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 
 export enum STATUS {
   PENDING = 'pending',

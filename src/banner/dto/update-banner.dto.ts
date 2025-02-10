@@ -1,6 +1,5 @@
 import { ApiHideProperty, ApiProperty, PartialType } from '@nestjs/swagger';
-import { CreateBannerDto } from './create-banner.dto';
-import { IsDateString, IsNotEmpty } from 'class-validator';
+import { IsDateString } from 'class-validator';
 
 export class UpdateBannerDto {
    @ApiProperty({ description: "Tiêu đề của banner",required:false })

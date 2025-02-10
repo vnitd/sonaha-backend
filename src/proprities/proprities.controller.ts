@@ -22,9 +22,7 @@ import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
 import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { GetAllPropertiesDto } from './dto/getall-proprities.dto';
 import { SearchDto } from './dto/search-properties.dto';
-import { getBannerDto } from 'src/banner/dto/get-banner.dto';
 import { PrismaClient } from '@prisma/client';
 @Controller('proprities')
 export class PropritiesController {

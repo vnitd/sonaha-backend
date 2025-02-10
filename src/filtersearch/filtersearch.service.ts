@@ -1,36 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { CreateFiltersearchDto } from './dto/create-filtersearch.dto';
-import { UpdateFiltersearchDto } from './dto/update-filtersearch.dto';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class FiltersearchService {
   prisma = new PrismaClient();
 
-  // search theo tỉnh, ý là có thể tối ưu được chỗ này nhma đag lười
-  async filterPhanTrang(page: number, limit: number, search: string) {
+  // lỗi 
+  async filterTheoType() {
+    try {
+      const results = await this.prisma.properties.findMany({
+        include: {
+          type_properties: true,
+        },
+      });
+      return {
+        data: results,
+      };
+    } catch (error) {
+      console.log('Error in filterTheoType:', error);
+      throw new Error(`Error while fetching properties: ${error.message}`);
+    }
+  }
+
+  async filterTheoProvince(page: number, limit: number, province: string) {
     try {
       const skip = (page - 1) * limit;
       const results = await this.prisma.properties.findMany({
         where: {
-          name: {
-            contains: search, // Tìm kiếm chuỗi chứa giá trị 'search'
-          },          
+          province: {
+            contains: province, // Lọc theo tỉnh thành
+          },
         },
-        skip: skip, // Bắt đầu từ bản ghi ở vị trí offset
-        take: limit, // Giới hạn số lượng bản ghi trả về
+        skip: skip,
+        take: limit,
         orderBy: {
-          created_at: 'desc', // Sắp xếp theo ngày tạo (hoặc bạn có thể thay đổi trường khác)
+          created_at: 'desc',
         },
       });
 
       const total = await this.prisma.properties.count({
         where: {
-          name: {
-            contains: search,
+          province: {
+            contains: province, // Lọc theo tỉnh thành
           },
         },
       });
+
       return {
         total,
         page,

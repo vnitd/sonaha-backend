@@ -12,4 +12,4 @@ import { KeyModule } from 'src/proprities/key/key.module';
   providers: [AlbumService],
   exports:[AlbumService]
 })
-export class AlbumModule {}
+export class AlbumModule{}

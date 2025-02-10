@@ -13,8 +13,8 @@ import { SaveModule } from './save/save.module';
 import { CommentModule } from './comment/comment.module';
 import { NotificationModule } from './notification/notification.module';
 import { StatsModule } from './stats/stats.module';
-import { TypesPropertiesModule } from './types-properties/types-properties.module';
 import { FiltersearchModule } from './filtersearch/filtersearch.module';
+import { ProvinceModule } from './province/province.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,8 +31,8 @@ import { FiltersearchModule } from './filtersearch/filtersearch.module';
     CommentModule,
     NotificationModule,
     StatsModule,
-    TypesPropertiesModule,
-    FiltersearchModule,  
+    FiltersearchModule,
+    ProvinceModule,  
   ],
   controllers: [AppController],
   providers: [AppService],

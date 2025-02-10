@@ -1,5 +1,5 @@
-import { ApiHideProperty, ApiProperty, PartialType } from '@nestjs/swagger';
-import { CreateTransistorDto } from './create-transistor.dto';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
+
 export enum STATUS {
    PENDING = 'pending',
    IN_PROGRESS = 'in_progress',

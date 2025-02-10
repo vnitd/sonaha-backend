@@ -19,6 +19,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 
+// quản lí trạng tháo giao dịch, thay đổi -> cập nhận trong transistion
 @Controller('stats')
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}

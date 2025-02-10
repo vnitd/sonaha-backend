@@ -1,14 +1,7 @@
-import { Body, Get, Injectable, NotFoundException, Patch, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Injectable, NotFoundException} from '@nestjs/common';
 import { UpdateProprityDto } from './dto/update-proprity.dto';
 import { CreatePropertyDto } from './dto/create-proprity.dto';
 import { PrismaClient } from '@prisma/client';
-import { GetAllPropertiesDto } from './dto/getall-proprities.dto';
-import { plainToClass, plainToInstance } from 'class-transformer';
-import { SearchDto } from './dto/search-properties.dto';
-import { getBannerDto } from 'src/banner/dto/get-banner.dto';
-import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
-import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { AlbumService } from 'src/album/album.service';
 
@@ -32,18 +25,18 @@ export class PropritiesService {
     const {
       name,
       description,
-      public_price,
-      area,
+
+
       status,
-      cost_price,
+  
       province,
       district,
       ward,
       house_direction,
-      number_of_bedrooms,
+  
       legal_status,
       balcony_direction,
-      number_of_bathrooms,
+ 
       furniture,
       house_number,
       description_detail,
