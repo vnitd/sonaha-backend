@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateAlbumDto, createVideoDto } from './dto/create-album.dto';
-import { UpdateAlbumDto } from './dto/update-album.dto';
 import { PrismaClient } from '@prisma/client';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 

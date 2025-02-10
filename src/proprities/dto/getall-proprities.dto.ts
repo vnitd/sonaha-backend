@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+
 import { Decimal } from '@prisma/client/runtime/library';
 import { Expose } from 'class-transformer';
 export class GetAllPropertiesDto {

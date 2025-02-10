@@ -5,7 +5,6 @@ import { PrismaClient } from '@prisma/client';
 import { userDto } from './dto/user.dto';
 import { plainToInstance } from 'class-transformer';
 import * as bcrypt from 'bcrypt'
-import { json } from 'stream/consumers';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 @Injectable()
 export class UserService {
@@ -13,6 +12,8 @@ export class UserService {
     private readonly cloudUploadService :CloudUploadService
   ){}
   prisma = new PrismaClient()
+  // á cái này chưa có tạo user
+  
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
   }

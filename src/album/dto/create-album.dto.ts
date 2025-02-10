@@ -1,5 +1,5 @@
 import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
-import { IsArray, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsArray, IsOptional} from 'class-validator';
 
 export class CreateAlbumDto {
   @ApiProperty({

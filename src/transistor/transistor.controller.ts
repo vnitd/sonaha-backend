@@ -14,11 +14,10 @@ import {
 import { TransistorService } from './transistor.service';
 import { CreateTransistorDto } from './dto/create-transistor.dto';
 import { UpdateTransistorDto } from './dto/update-transistor.dto';
-import { ApiBearerAuth, ApiConsumes, ApiOkResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
 import { Response } from 'express';
 import { GetAllTras } from './dto/get-all.dto';
-import { json } from 'stream/consumers';
 
 @Controller('transactions')
 export class TransistorController {

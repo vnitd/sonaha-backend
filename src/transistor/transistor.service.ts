@@ -4,7 +4,6 @@ import { UpdateTransistorDto } from './dto/update-transistor.dto';
 import { PrismaClient } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { GetAllTras } from './dto/get-all.dto';
-import { error } from 'console';
 
 @Injectable()
 export class TransistorService {

@@ -1,26 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import { KeyService } from 'src/proprities/key/key.service';
-import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { loginDto } from './dto/login.dto';
 import { registerDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from 'src/email/email.service';
-import { EmailDto } from './stratergy/email.stratergy.dto';
-import { sendMailDto } from './dto/sendMail.dto';
-import { promises } from 'dns';
 @Injectable()
 export class AuthService {
   prisma = new PrismaClient();
-
   constructor(
     private jwtService: JwtService,
-    private configService: ConfigService,
     private keyService: KeyService,
-    private cloudUploadService: CloudUploadService,
     private emailService: EmailService,
   ) {}
 

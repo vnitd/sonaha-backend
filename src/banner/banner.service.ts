@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
 import { getBannerDto } from './dto/get-banner.dto';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { plainToClass } from 'class-transformer';
 import { JwtService } from '@nestjs/jwt';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
-import { Response } from 'express';
 import { Cron } from '@nestjs/schedule';
 @Injectable()
 export class BannerService {
