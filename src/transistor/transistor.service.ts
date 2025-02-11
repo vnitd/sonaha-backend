@@ -92,80 +92,94 @@ prisma = new PrismaClient()
       return error.message;
     }
   }
-  // transaction 
-  async update(updateTransistorDto: UpdateTransistorDto, transId: number, userId: number) {
+  
+  // transaction chuyển từ pending sang complete
+  async updateTransistorDto(updateTransistorDto: UpdateTransistorDto, transId: number, userId: number) {
     try {
       const checkAdmin = await this.prisma.users.findFirst({
-        where: {
-          user_id: userId,
-        },
+        where: { user_id: userId },
       });
   
-      if (
-        checkAdmin.role_name === 'admin' ||
-        checkAdmin.role_name === 'manager' ||
-        checkAdmin.role_name === 'moderator'
-      ) {
-        // Cập nhật trạng thái giao dịch
-        await this.prisma.transactions.update({
-          where: {
-            inquiry_id: Number(transId),
-          },
-          data: {
-            status: updateTransistorDto.status,
-          },
+      if (!['admin', 'manager', 'moderator'].includes(checkAdmin.role_name)) {
+        throw new Error('Unauthorized access');
+      }
+  
+      const transaction = await this.prisma.transactions.findFirst({
+        where: { inquiry_id: Number(transId) },
+      });
+  
+      if (!transaction) {
+        throw new Error('Transaction not found');
+      }
+  
+      const previousStatus = transaction.status;
+      const newStatus = updateTransistorDto.status;
+  
+      const validStatuses = ['pending', 'completed', 'failed', 'canceled'];
+      if (!validStatuses.includes(newStatus)) {
+        throw new Error(`Invalid status value: ${newStatus}`);
+      }
+  
+      await this.prisma.transactions.update({
+        where: { inquiry_id: Number(transId) },
+        data: { status: newStatus },
+      });
+  
+      const property = await this.prisma.properties.findFirst({
+        where: { property_id: transaction.property_id },
+      });
+  
+      if (!property) {
+        throw new Error('Property not found');
+      }
+  
+      const currentDate = new Date().toISOString().split('T')[0];
+  
+      const dailyStats = await this.prisma.daily_transactions_stats.findUnique({
+        where: { transaction_date: new Date(currentDate) },
+      });
+  
+      if (previousStatus === 'pending' && newStatus === 'completed') {
+        await this.prisma.properties.update({
+          where: { property_id: transaction.property_id },
+          data: { status: 'sold' },
         });
   
-        const transaction = await this.prisma.transactions.findFirst({
-          where: {
-            inquiry_id: Number(transId),
-          },
-        });
-  
-        // Nếu trạng thái là "completed", cập nhật bảng properties và daily_transactions_stats
-        if (updateTransistorDto.status === 'completed') {
-          // Cập nhật trạng thái của property thành 'sold'
-          await this.prisma.properties.update({
-            where: {
-              property_id: transaction.property_id,
-            },
+        if (!dailyStats) {
+          await this.prisma.daily_transactions_stats.create({
             data: {
-              status: 'sold',
+              transaction_date: new Date(currentDate),
+              transaction_total_perday: 1,
+              total_revenue_perday: property.price_difference || 0,
             },
           });
-  
-          // Lấy ngày hiện tại
-          const currentDate = new Date();
-          const formattedDate = currentDate.toISOString().split('T')[0]; // yyyy-MM-dd
-  
-          // Lấy thông tin property
-          const trans = await this.prisma.properties.findFirst({
-            where: {
-              property_id: transaction.property_id,
+        } else {
+          await this.prisma.daily_transactions_stats.update({
+            where: { transaction_date: new Date(currentDate) },
+            data: {
+              transaction_total_perday: dailyStats.transaction_total_perday + 1,
+              total_revenue_perday: dailyStats.total_revenue_perday + (property.price_difference || 0),
             },
           });
-  
-          // Kiểm tra xem bản ghi trong daily_transactions_stats đã tồn tại hay chưa
-          const existingStats = await this.prisma.daily_transactions_stats.findUnique({
-            where: {
-              transaction_date: new Date(formattedDate),
-            },
-          });
-  
-          if (!existingStats) {
-            // Nếu chưa tồn tại, tạo mới
-            await this.prisma.daily_transactions_stats.create({
-              data: {
-                transaction_date: new Date(formattedDate),
-                transaction_total_perday: 1,
-                total_revenue_perday: trans.price_difference || 0,
-              },
-            });
-          } else {
-            // Nếu đã tồn tại, không cập nhật nữa
-            throw new Error(`Stats for date ${formattedDate} already exist, skipping update.`)
-          }
         }
+      } else if (previousStatus === 'completed' && newStatus === 'pending') {
+        if (dailyStats) {
+          const updatedTransactions = Math.max(0, dailyStats.transaction_total_perday - 1);
+          const updatedRevenue = Math.max(0, dailyStats.total_revenue_perday - (property.price_difference || 0));
+  
+          await this.prisma.daily_transactions_stats.update({
+            where: { transaction_date: new Date(currentDate) },
+            data: {
+              transaction_total_perday: updatedTransactions,
+              total_revenue_perday: updatedRevenue,
+            },
+          });
+        }
+  
+        await this.prisma.properties.update({
+          where: { property_id: transaction.property_id },
+          data: { status: 'available' },
+        });
       }
   
       return 'Update successful';
@@ -173,5 +187,6 @@ prisma = new PrismaClient()
       return error.message;
     }
   }
+  
   
 }

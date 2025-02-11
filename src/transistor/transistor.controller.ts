@@ -80,7 +80,8 @@ export class TransistorController {
     }
   }
 
-  @Patch(':id')
+
+@Patch(':id')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 async update(
@@ -91,7 +92,7 @@ async update(
 ): Promise<void> {
   try {
     const userId = req.user.userId;
-    const result = await this.transistorService.update(updateTransistorDto, +id, +userId);
+    const result = await this.transistorService.updateTransistorDto(updateTransistorDto, +id, +userId);
     res.status(HttpStatus.OK).json(result); 
   } catch (error) {
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: error.message });
