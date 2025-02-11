@@ -1,51 +1,40 @@
 import { Controller, Get, Query, Res, HttpStatus } from '@nestjs/common';
 import { FiltersearchService } from './filtersearch.service';
 import { Response } from 'express';
-
 @Controller('filtersearch')
 export class FiltersearchController {
   constructor(private readonly filtersearchService: FiltersearchService) {}
-  // http://localhost:8080/filtersearch/searchProperties?type=Apartment&name=Sunrise
+// province truyền vô phải chuẩn ha
+@Get('/searchFilterProvince')  // Single leading slash, no double slashes
+async searchProperties(
+  @Res() res,
+  @Query('name') name: string,
+  @Query('province') province: string,
+) {
+  try {
+    const results = await this.filtersearchService.searchPropertiesByNameAndProvince(
+      name, province
+    );
 
-  // Tìm theo province và name:
-  // http://localhost:8080/filtersearch/searchProperties?province=Hanoi&name=Sunrise
-
-  // Tìm theo cả type, province, và name:
-  // http://localhost:8080/filtersearch/searchProperties?type=Apartment&province=Hanoi&name=Sunrise
-
-  @Get('/searchProperties')
-  async searchProperties(
-    @Res() res,
-    @Query('type') type,
-    @Query('province') province,
-    @Query('name') name,
-  ) {
-    try {
-      const properties =
-        await this.filtersearchService.searchPropertiesByNameTypeOrProvince(
-          name,
-          type,
-          province,
-        );
-
-      return res.status(200).json({
-        data: properties,
-      });
-    } catch (error) {
-      return res.status(500).json({
-        message: 'Internal Server Error',
-        error: error.message,
-      });
-    }
+    return res.status(200).json({
+      data: results,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
   }
+}
 
-  // phân trang theo types
+
+  // phân trang theo types 
   @Get('/filterTypes')
   async getFilterTypes(
     @Res() res,
-    @Query('type') type: string,
-    @Query('page') page: number,
-    @Query('limit') limit: number,
+    @Query('type') type :string ,
+    @Query('page') page :number ,
+    @Query('limit') limit :number,
   ) {
     try {
       const data = await this.filtersearchService.filterTheoType(

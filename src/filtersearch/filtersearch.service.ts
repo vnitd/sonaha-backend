@@ -6,62 +6,32 @@ import { PropertyType } from './dto/create-filtersearch.dto';
 export class FiltersearchService {
   prisma = new PrismaClient();
 
-  async searchPropertiesByNameTypeOrProvince(name: string, type: string, province: string) {
+  // Service to search properties_name by properties_type
+  // Service method to search by name and province
+  async searchPropertiesByNameAndProvince(name: string, province: string) {
     try {
-      if (!name && !type && !province) {
-        throw new Error('At least one filter condition is required');
-      }
-  
-      const whereCondition: any = { AND: [] };
-  
-      if (type) {
-        if (!Object.values(PropertyType).includes(type as PropertyType)) {
-          throw new Error(`Invalid property type: ${type}`);
-        }
-        whereCondition.AND.push({
-          type_properties: {
-            some: {
-              typePropertiesName: type as PropertyType,
-            },
-          },
-        });
-      }
-  
-      if (province) {
-        whereCondition.AND.push({
-          province: {
-            contains: province,
-            mode: 'insensitive',
-          },
-        });
-      }
-  
-      if (name) {
-        whereCondition.AND.push({
-          name: {
-            contains: name,
-            mode: 'insensitive',
-          },
-        });
-      }
-  
-      const properties = await this.prisma.properties.findMany({
-        where: whereCondition,
-        include: {
-          type_properties: true,
+      // Lấy danh sách tất cả các bất động sản theo tỉnh
+      const Listprovince = await this.prisma.properties.findMany({
+        where: {
+          province, // Lọc theo tỉnh
         },
       });
   
-      // Trả về mảng rỗng nếu không tìm thấy kết quả
-      return properties;
+      // Sau đó lọc theo tên
+      const results = Listprovince.filter(property =>
+        property.name.toLowerCase().includes(name.toLowerCase())
+      );
+  
+      return results;
     } catch (error) {
-      console.error('Error in searchPropertiesByNameTypeOrProvince:', error);
-      throw new Error(`Error while fetching properties: ${error.message}`);
+      throw error;
     }
   }
   
+  
+  
 
-  // lỗi
+  // mới fix xong
   public getPagination(total: number, page: number, limit: number) {
     return {
       total,
