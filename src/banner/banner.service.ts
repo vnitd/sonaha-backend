@@ -11,8 +11,8 @@ import { Cron } from '@nestjs/schedule';
 export class BannerService {
   prisma = new PrismaClient()
   constructor(
-    private jwtService : JwtService,
-    private cloudUploadService : CloudUploadService
+    private readonly jwtService : JwtService,
+    private readonly cloudUploadService : CloudUploadService
   ){}
   async create(createBannerDto: CreateBannerDto,
     id:number

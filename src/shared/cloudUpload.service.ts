@@ -6,7 +6,7 @@ import {UploadApiResponse } from "cloudinary";
 // từ đó có thể xài cho nhiều thằng 
 @Injectable() 
 export class CloudUploadService{
-   constructor(@Inject('CLOUDINARY') private cloudinary){}
+   constructor(@Inject('CLOUDINARY') private readonly cloudinary){}
    async uploadImage(file: Express.Multer.File, folder: string): Promise<UploadApiResponse> {
       return new Promise((resolve,reject)=>{
          const uploadStream = this.cloudinary.uploader.upload_stream(
@@ -56,6 +56,8 @@ export class CloudUploadService{
             (error: any, result: UploadApiResponse) => {
                if (error) {
                   reject(error);
+                  console.log(error);
+                  
                } else {
                   resolve(result);
                }

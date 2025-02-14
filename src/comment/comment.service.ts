@@ -158,7 +158,7 @@ export class CommentService {
 
       // Tạo thông báo cho mỗi admin/moderator
       for (const admin of adminsAndModerators) {
-        const notificationForAdmin = await this.prisma.notifications.create({
+       await this.prisma.notifications.create({
           data: {
             user_id: admin.user_id, // Người nhận là admin hoặc moderator
             title: 'Có người trả lời bình luận',

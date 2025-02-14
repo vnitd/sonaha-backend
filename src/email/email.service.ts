@@ -4,9 +4,9 @@ import {ConfigService} from '@nestjs/config'
 // cứ liên quan tới upload env lên thì cứ dùng nest config 
 @Injectable()
 export class EmailService{
-   private transporter : nodemailer.Transporter;
+   private readonly transporter : nodemailer.Transporter;
    constructor(
-      private configService: ConfigService,
+      private readonly configService: ConfigService,
    ){
       this.transporter = createTransport({
          host: 'smtp.gmail.com',

@@ -59,9 +59,9 @@ async searchProperties(
   @Get('/filterPropertiesProvince')
   async getFilterProvince(
     // trang mặc định là 1, limit là 10
+    @Query('Province') search: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-    @Query('Province') search: string,
     @Res() res: Response,
   ): Promise<void> {
     try {

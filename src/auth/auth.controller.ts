@@ -146,7 +146,7 @@ async resetPass(@Body() payload: { password: string; reset_token: string }) {
       }
 
       // Tạo Access Token mới (ví dụ sử dụng một hàm tạo token)
-      const newAccessToken = await createTokenAsyncKey({ user_id: user.user_id });
+      const newAccessToken =  createTokenAsyncKey({ user_id: user.user_id });
 
       return res.status(200).json({ accessToken: newAccessToken });
     } catch (error) {
