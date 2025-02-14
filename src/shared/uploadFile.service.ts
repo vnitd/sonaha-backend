@@ -13,7 +13,7 @@ export const getStoreOption = (destination: string) => {
          },
       }),
       limits: {
-         fileSize: 6 * 1024 * 1024, // Giới hạn dung lượng 2MB
+         fileSize: 5 * 1024 * 1024, // Giới hạn dung lượng 2MB
       },
       fileFilter: (req: Request, file: Express.Multer.File, callback: Function) => {
          const allowedMimeTypes = ["image/jpeg", "image/png", "image/gif"];
