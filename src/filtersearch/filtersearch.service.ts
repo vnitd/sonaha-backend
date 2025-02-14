@@ -24,7 +24,7 @@ export class FiltersearchService {
   
       return results;
     } catch (error) {
-      throw error;
+      console.log(error);
     }
   }
   
