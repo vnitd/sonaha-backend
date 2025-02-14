@@ -10,7 +10,7 @@ import { PrismaClient } from '@prisma/client';
 @WebSocketGateway()
 export class NotificationGateway {
   private activeConnections: { [key: string]: Socket } = {};
-   prisma = new PrismaClient(); // Khởi tạo PrismaClient để truy vấn cơ sở dữ liệu
+  prisma = new PrismaClient(); // Khởi tạo PrismaClient để truy vấn cơ sở dữ liệu
 
   @SubscribeMessage('comment')
   async handleComment(
@@ -21,9 +21,13 @@ export class NotificationGateway {
       comment: string;
     },
   ): Promise<WsResponse<string>> {
-    // ý là cái userId mình không dùng nhma có cách nào để giả bộ dùng nó k 
-    const { userId, postId, comment } = commentData;
-    void userId
+    // ý là cái userId mình không dùng nhma có cách nào để giả bộ dùng nó k
+    const {
+      // userId,
+      postId,
+      comment,
+    } = commentData;
+
     await this.sendNotificationToAdminsAndModerators(postId, comment);
 
     return {
@@ -38,7 +42,7 @@ export class NotificationGateway {
   ): Promise<void> {
     const adminsAndModerators = await this.prisma.transactions.findMany({
       where: {
-        property_id: Number(postId), 
+        property_id: Number(postId),
         status: 'pending',
       },
       select: {
@@ -73,7 +77,7 @@ export class NotificationGateway {
 
   handleConnection(client: Socket) {
     console.log('New client connected');
-    client.data.userId = 'userId_from_auth'; 
+    client.data.userId = 'userId_from_auth';
     this.activeConnections[client.id] = client;
   }
 

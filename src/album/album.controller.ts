@@ -14,7 +14,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { AlbumService } from './album.service';
-import { CreateAlbumDto, createVideoDto } from './dto/create-album.dto';
+import { CreateAlbumDto, CreateVideoDto } from './dto/create-album.dto';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
 import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -77,7 +77,7 @@ export class AlbumController {
   @UseInterceptors(FileInterceptor('video'))
   async createVideo(
     @Param('id') id: number,
-    @Body() createAlbumDto: createVideoDto, // đoạn này
+    @Body() createAlbumDto: CreateVideoDto, // đoạn này
     @Req() req,
     @Res() res: Response,
     @UploadedFile() video: Express.Multer.File,

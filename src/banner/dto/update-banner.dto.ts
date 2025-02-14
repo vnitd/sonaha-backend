@@ -1,4 +1,4 @@
-import { ApiHideProperty, ApiProperty, PartialType } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { IsDateString } from 'class-validator';
 
 export class UpdateBannerDto {

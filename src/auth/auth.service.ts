@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClient } from '@prisma/client';
 import { KeyService } from 'src/proprities/key/key.service';
-import { loginDto } from './dto/login.dto';
-import { registerDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from 'src/email/email.service';
@@ -17,7 +17,7 @@ export class AuthService {
   ) {}
 
   // login với register nằm ở đây
-  async Login(body: loginDto): Promise<string> {
+  async Login(body: LoginDto): Promise<string> {
     try {
       const { email, password } = body;
       const checkUserAdmin = await this.prisma.users.findFirst({
@@ -62,7 +62,7 @@ export class AuthService {
     }
   }
 
-  async Register(body: registerDto): Promise<string> {
+  async Register(body: RegisterDto): Promise<string> {
     try {
       const { email, password, phone, name, avartar_url } = body;
 

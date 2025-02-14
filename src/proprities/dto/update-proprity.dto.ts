@@ -1,5 +1,5 @@
 import { ApiHideProperty, ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsNotEmpty } from "class-validator";
+import { IsEnum } from "class-validator";
 
 export enum Status {
    AVAILABLE = 'available',

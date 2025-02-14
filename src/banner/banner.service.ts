@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateBannerDto } from './dto/create-banner.dto';
 import { UpdateBannerDto } from './dto/update-banner.dto';
-import { getBannerDto } from './dto/get-banner.dto';
+import { GetBannerDto } from './dto/get-banner.dto';
 import { PrismaClient } from '@prisma/client';
 import { plainToClass } from 'class-transformer';
 import { JwtService } from '@nestjs/jwt';
@@ -42,10 +42,10 @@ export class BannerService {
   }
   
   
-  async findAllBanner():Promise<getBannerDto[]> {
+  async findAllBanner():Promise<GetBannerDto[]> {
     try {
       const bannerOut = await this.prisma.banners.findMany()
-      return bannerOut.map((banner)=>plainToClass(getBannerDto,banner))
+      return bannerOut.map((banner)=>plainToClass(GetBannerDto,banner))
 
     } catch (error) {
       throw new Error(error)

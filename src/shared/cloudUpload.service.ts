@@ -16,6 +16,7 @@ export class CloudUploadService{
             (error:any,result:UploadApiResponse)=>{
                if (error) {
                   reject(error)
+                  throw new Error('Lỗi'); 
                }else{
                   // nếu có cái trả về thì lấy ở đây
                   resolve(result);
@@ -56,8 +57,8 @@ export class CloudUploadService{
             (error: any, result: UploadApiResponse) => {
                if (error) {
                   reject(error);
-                  console.log(error);
-                  
+                  throw new Error('Lỗi');  
+               
                } else {
                   resolve(result);
                }
