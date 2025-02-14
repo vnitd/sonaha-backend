@@ -10,7 +10,7 @@ import { PrismaClient } from '@prisma/client';
 @WebSocketGateway()
 export class NotificationGateway {
   private activeConnections: { [key: string]: Socket } = {};
-  private prisma = new PrismaClient(); // Khởi tạo PrismaClient để truy vấn cơ sở dữ liệu
+   prisma = new PrismaClient(); // Khởi tạo PrismaClient để truy vấn cơ sở dữ liệu
 
   @SubscribeMessage('comment')
   async handleComment(
@@ -21,7 +21,9 @@ export class NotificationGateway {
       comment: string;
     },
   ): Promise<WsResponse<string>> {
+    // ý là cái userId mình không dùng nhma có cách nào để giả bộ dùng nó k 
     const { userId, postId, comment } = commentData;
+    void userId
     await this.sendNotificationToAdminsAndModerators(postId, comment);
 
     return {

@@ -11,9 +11,9 @@ import { EmailService } from 'src/email/email.service';
 export class AuthService {
   prisma = new PrismaClient();
   constructor(
-    private jwtService: JwtService,
-    private keyService: KeyService,
-    private emailService: EmailService,
+    private readonly jwtService: JwtService,
+    private readonly keyService: KeyService,
+    private readonly emailService: EmailService,
   ) {}
 
   // login với register nằm ở đây
@@ -77,7 +77,7 @@ export class AuthService {
       // Mã hóa mật khẩu
       const hashedPassword = await bcrypt.hash(password, 10);
       // Tạo người dùng mới
-      const newUser = await this.prisma.users.create({
+       await this.prisma.users.create({
         data: {
           email,
           password: hashedPassword,

@@ -98,14 +98,18 @@ export class AlbumService {
   
       // Hàm xác định loại file
       const getType = (url: string): string => {
-        const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm'];
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-        const fileExtension = url.split('.').pop()?.toLowerCase();
-  
-        if (fileExtension && videoExtensions.includes(fileExtension)) return 'video';
-        if (fileExtension && imageExtensions.includes(fileExtension)) return 'image';
-        return 'unknown';
+        const extension = url.split('.').pop()?.toLowerCase();
+        
+        if (!extension) return 'unknown';
+      
+        const fileTypes: { [key: string]: string } = {
+          mp4: 'video', mov: 'video', avi: 'video', mkv: 'video', webm: 'video',
+          jpg: 'image', jpeg: 'image', png: 'image', gif: 'image', bmp: 'image', webp: 'image'
+        };
+      
+        return fileTypes[extension] || 'unknown';
       };
+      
   
       const fileType = getType(url);
       // trong trường hợp có nhiều hơn 1 video
