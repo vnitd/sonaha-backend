@@ -1,25 +1,51 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Res,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Query, Res, HttpStatus } from '@nestjs/common';
 import { FiltersearchService } from './filtersearch.service';
 import { Response } from 'express';
-
 @Controller('filtersearch')
 export class FiltersearchController {
   constructor(private readonly filtersearchService: FiltersearchService) {}
-// lỗi đây 
-  @Get('/filterTypes')
-  async getFilterTypes(@Res() res: Response) {
-    try {
-      const data = await this.filtersearchService.filterTheoType();
+// province truyền vô phải chuẩn ha
+@Get('/searchFilterProvince')  // Single leading slash, no double slashes
+async searchProperties(
+  @Res() res,
+  @Query('name') name: string,
+  @Query('province') province: string,
+) {
+  try {
+    const results = await this.filtersearchService.searchPropertiesByNameAndProvince(
+      name, province
+    );
 
-      // Trả kết quả về dưới dạng JSON
+    return res.status(200).json({
+      data: results,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+}
+
+
+  // phân trang theo types 
+  @Get('/filterTypes')
+  async getFilterTypes(
+    @Res() res,
+    @Query('type') type :string ,
+    @Query('page') page :number ,
+    @Query('limit') limit :number,
+  ) {
+    try {
+      const data = await this.filtersearchService.filterTheoType(
+        type,
+        Number(page),
+        Number(limit),
+      );
+
       return res.status(200).json({
         data: data.data,
+        pagination: data.pagination,
       });
     } catch (error) {
       return res.status(500).json({
@@ -29,12 +55,13 @@ export class FiltersearchController {
     }
   }
 
-  @Get('/filterProperties')
+  // phân trang theo province
+  @Get('/filterPropertiesProvince')
   async getFilterProvince(
     // trang mặc định là 1, limit là 10
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
-    @Query('search') search: string,
+    @Query('Province') search: string,
     @Res() res: Response,
   ): Promise<void> {
     try {

@@ -1,7 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Res, UseGuards, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Param, Delete, Req, Res, UseGuards, HttpStatus } from '@nestjs/common';
 import { SaveService } from './save.service';
-import { CreateSaveDto } from './dto/create-save.dto';
-import { UpdateSaveDto } from './dto/update-save.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
 import { Response } from 'express';

@@ -1,25 +1,18 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
   Param,
   Delete,
   UseGuards,
   Req,
   Res,
-  HttpStatus,
 } from '@nestjs/common';
 import { StatsService } from './stats.service';
-import { CreateStatDto } from './dto/create-stat.dto';
-import { UpdateStatDto } from './dto/update-stat.dto';
 import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Response } from 'express';
-import { AuthGuard } from '@nestjs/passport';
-
 // quản lí trạng tháo giao dịch, thay đổi -> cập nhận trong transistion
+
 @Controller('stats')
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}
@@ -55,4 +48,5 @@ export class StatsController {
      throw new Error(error)
     }
   }
+
 } 
