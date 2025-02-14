@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaClient } from '@prisma/client';
-import { userDto } from './dto/user.dto';
+import { UserDto } from './dto/user.dto';
 import { plainToInstance } from 'class-transformer';
 import * as bcrypt from 'bcrypt'
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
@@ -18,7 +18,7 @@ export class UserService {
     return 'This action adds a new user';
   }
 
-  async findAllUser(id: number): Promise<userDto[]> {
+  async findAllUser(id: number): Promise<UserDto[]> {
     // Tìm user để kiểm tra quyền
     const checkAdmin = await this.prisma.users.findFirst({
       where: { user_id: Number(id) },
@@ -34,7 +34,7 @@ export class UserService {
       checkAdmin.role_name === 'employee'
     ) {
       const users = await this.prisma.users.findMany();
-      return plainToInstance(userDto, users); // Trả về mảng DTO
+      return plainToInstance(UserDto, users); // Trả về mảng DTO
     }
 
     throw new UnauthorizedException('Không có quyền truy cập');

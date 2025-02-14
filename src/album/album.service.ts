@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAlbumDto, createVideoDto } from './dto/create-album.dto';
+import { CreateAlbumDto, CreateVideoDto } from './dto/create-album.dto';
 import { PrismaClient } from '@prisma/client';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 
@@ -40,7 +40,7 @@ export class AlbumService {
   }
 
   async createVideo(
-    createAlbumDto: createVideoDto,
+    createAlbumDto: CreateVideoDto,
     propertyId: number,
     userId: number,
   ): Promise<string> {

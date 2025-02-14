@@ -121,7 +121,8 @@ export class FiltersearchService {
         data: results,
       };
     } catch (error) {
-      throw error;
+      console.log(error);
+      throw new error;
     }
   }
 

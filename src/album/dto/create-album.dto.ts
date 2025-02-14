@@ -17,7 +17,7 @@ export class CreateAlbumDto {
 
 }
 // video
-export class createVideoDto{
+export class CreateVideoDto{
   @IsOptional()
   @ApiProperty({
     type: 'string',

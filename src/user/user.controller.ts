@@ -18,7 +18,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
 import { ApiBearerAuth, ApiConsumes, ApiOkResponse } from '@nestjs/swagger';
-import { userDto } from './dto/user.dto';
+import { UserDto } from './dto/user.dto';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PrismaClient } from '@prisma/client';
@@ -41,7 +41,7 @@ export class UserController {
   @Get('/get-all-users')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOkResponse({ type: [userDto] }) // Mô tả cấu trúc dữ liệu trả về
+  @ApiOkResponse({ type: [UserDto] }) // Mô tả cấu trúc dữ liệu trả về
   async findAllUser(@Req() req, @Res() res: Response): Promise<any> {
     try {
       const userId = req.user.userId; // Lấy ID từ token

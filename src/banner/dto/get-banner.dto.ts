@@ -1,6 +1,6 @@
 import { Exclude, Expose } from "class-transformer"
 
-export class getBannerDto{
+export class GetBannerDto{
    @Exclude()
    id : string
    @Expose()

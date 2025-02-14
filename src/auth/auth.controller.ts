@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { loginDto } from './dto/login.dto';
+import { LoginDto } from './dto/login.dto';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { Response, Request } from 'express';
-import { registerDto } from './dto/register.dto';
+import { RegisterDto } from './dto/register.dto';
 import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { sendMailDto } from './dto/sendMail.dto';
+import { SendMailDto } from './dto/sendMail.dto';
 import { LoginFacebookDto } from './dto/loginface.dto';
 import { PrismaClient } from '@prisma/client';
 import { createTokenAsyncKey } from 'src/utils/token.utils';
@@ -21,7 +21,7 @@ export class AuthController {
 
   @Post("/login")
   async Login(
-    @Body() body: loginDto,
+    @Body() body: LoginDto,
     @Res() res: Response,
   ): Promise<Response<string>> {
     const result = await this.authService.Login(body);
@@ -33,10 +33,10 @@ export class AuthController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('img'))
   @ApiBody({
-    type: registerDto,
+    type: RegisterDto,
   })
   async register(
-    @Body() registerDto: registerDto,
+    @Body() registerDto: RegisterDto,
     @UploadedFile() file: Express.Multer.File,
     @Res() res: Response
   ) {
@@ -55,7 +55,7 @@ export class AuthController {
   // resetpass
   @Post('/send_mail_reset_token')
   async sendMail(
-    @Body() body: sendMailDto,
+    @Body() body: SendMailDto,
     @Res() res: Response
   ): Promise<Response<any>> {
     await this.authService.sendResetKey(body.email);

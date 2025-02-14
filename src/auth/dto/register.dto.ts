@@ -2,7 +2,7 @@
 import { ApiHideProperty, ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsOptional } from "class-validator";
 
-export class registerDto {
+export class RegisterDto {
    @ApiProperty()
    @IsEmail({}, { message: 'không đúng định dạng' })
    email: string;
