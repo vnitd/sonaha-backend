@@ -14,7 +14,7 @@ export class ProvinceController {
   // Lấy tất cả các quận/huyện theo provinceId
   @Get(':provinceId/districts')
   findDistrictsByProvince(@Param('provinceId') provinceId: string) {
-    return this.provinceService.findDistrictsByProvince(+provinceId);
+    return this.provinceService.findDistrictsByProvince(provinceId);
   }
 
   // Lấy tất cả các xã/phường theo districtId
