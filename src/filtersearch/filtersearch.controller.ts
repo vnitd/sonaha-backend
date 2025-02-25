@@ -52,8 +52,8 @@ async getFilteredProperties(
   @Query('type') type: string | null, // Loại bất động sản có thể không có
   @Query('province') province: string | null, // Tỉnh có thể không có
   @Query('district') district: string | null, // Quận có thể không có
-  @Query('page') page: number = 1, // Phân trang
-  @Query('limit') limit: number = 12, // Số lượng trang
+  @Query('page') page: number, // Phân trang
+  @Query('limit') limit: number, // Số lượng trang
   @Query('price') price: string | null, // Khoảng giá có thể không có
 ) {
   try {
@@ -75,7 +75,10 @@ async getFilteredProperties(
     console.log(province);
     console.log(khoanggia);
     console.log(district);
-
+    // console.log(limit);
+    // console.log(page);
+    
+    
     // Gọi service để lấy kết quả lọc
     const result = await this.filtersearchService.FilterTheoProvinceTypeKhoangGia(
       type, 

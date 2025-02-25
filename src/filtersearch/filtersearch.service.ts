@@ -104,76 +104,65 @@ export class FiltersearchService {
     district: string | null
 ): Promise<any> {
     try {
-      const skip = (page - 1) * limit; // cái này mặc định nên khỏi nói
-      const take = limit; // này cũng z
-      let resultByType :any;
-      // Nếu không có 'filter' (type), lấy tất cả các type
-      // có 1 lỗi ở đây, cái này bắt đầu lọc từ bảng type chứ kh phải là lọc từ bảng sản phẩm chính
-      // nên nếu hông có gì nhập vô
-      if (filter === null && khoanggia === null && province === null && district === null) {
-        // Nếu không có điều kiện lọc nào, lấy tất cả dữ liệu
-        resultByType = await this.prisma.properties.findMany();
-    }else{ if (!filter) {
-        resultByType = await this.prisma.type_properties.findMany({
-          include: {
-            properties: true,
-          },
-        });
-      } else {
-        resultByType = await this.prisma.type_properties.findMany({
-          where: {
-            typePropertiesName: filter as type_properties_typePropertiesName,
-          },
-          include: {
-            properties: true,
-          },
-        });
-      }
-    }
-      let resultProvince = resultByType;
-      // Nếu có 'province', lọc theo tỉnh
-      console.log(resultByType );
-      
-      if (province) {
-        resultProvince = resultProvince.filter((item:any) => item.properties.province === province);
-      }
+      const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+      const skip = (page - 1) * parsedLimit;
+      const take = parsedLimit;
 
-      // Nếu có 'district', lọc theo quận
-      if (district) {
-        resultProvince = resultProvince.filter((item:any) => item.properties.district === district);
-      }
-      // test được cái tỉnh với distric với type rồi
+        // Xây dựng điều kiện lọc
+        const whereClause: any = {};
 
-      // Lọc theo khoảng giá
-      let minPrice: number, maxPrice: number;
-      if (Array.isArray(khoanggia)) {
-        [minPrice, maxPrice] = khoanggia;
-      } else if (khoanggia) {
-        minPrice = khoanggia;
-        maxPrice = khoanggia;
-      } else {
-        minPrice = 0; // Mặc định 0 nếu không có khoảng giá
-        maxPrice = Number.MAX_SAFE_INTEGER; // Mặc định vô hạn nếu không có khoảng giá
-      }
+        // Lọc theo type
+        if (filter) {
+            whereClause.typePropertiesName = filter as type_properties_typePropertiesName;
+        }
 
-      const filteredResults = resultProvince.filter((item:any) => {
-        const propertyPrice = item.properties.public_price;
-        return propertyPrice >= minPrice && propertyPrice <= maxPrice;
-      });
+        // Lọc theo province và district
+        if (province || district) {
+            whereClause.properties = {};
+            if (province) {
+                whereClause.properties.province = province;
+            }
+            if (district) {
+                whereClause.properties.district = district;
+            }
+        }
 
-      const totalCount = filteredResults.length;
-      const totalPages = Math.ceil(totalCount / limit);
-      const paginatedResults = filteredResults.slice(skip, skip + take);
+        // Lọc theo khoảng giá
+        let minPrice: number = 0;
+        let maxPrice: number = Number.MAX_SAFE_INTEGER;
+        if (Array.isArray(khoanggia)) {
+            [minPrice, maxPrice] = khoanggia;
+        } else if (khoanggia) {
+            minPrice = khoanggia;
+            maxPrice = khoanggia;
+        }
+        whereClause.properties = {
+            ...whereClause.properties,
+            public_price: { gte: minPrice, lte: maxPrice }
+        };
 
-      return {
-        paginatedResults,
-        totalCount,
-        totalPages,
-        currentPage: page,
-      };
+        // Truy vấn dữ liệu đã lọc và phân trang
+        const [results, totalCount] = await Promise.all([
+            this.prisma.type_properties.findMany({
+                where: whereClause,
+                include: { properties: true },
+                skip: skip,
+                take: take,
+            }),
+            this.prisma.type_properties.count({ where: whereClause })
+        ]);
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        return {
+            paginatedResults: results,
+            totalCount,
+            totalPages,
+            currentPage: page
+        };
     } catch (error) {
-      console.log(error);
-      throw new Error('Error fetching data: ' + error.message);
+        console.error('Error fetching data:', error);
+        throw new Error('Error fetching data: ' + error.message);
     }
 }
 
