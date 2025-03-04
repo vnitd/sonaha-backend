@@ -7,7 +7,9 @@ import { PropertyType } from './dto/create-filtersearch.dto';
 
 @Injectable()
 export class FiltersearchService {
-  prisma = new PrismaClient();
+  prisma = new PrismaClient({
+    log: ['query', 'info', 'warn', 'error'],
+  });
 
   // Service to search properties_name by properties_type
   // Service method to search by name and province
@@ -91,15 +93,12 @@ export class FiltersearchService {
     }
   }
 
-  // không có bất kì tham số nào thì lấy hết
-  // cái này lọc cho tới quận huyện
-  // không có tỉnh thì lấy hết theo những field khác, không co cótype thì lấy hết theo những fiels khác
-  // trước hết tất cả dự án bds phải cho nó có đúng 1 cái type, để nó lấy ra theo bảng type
+  // cái này bắt buộc phải có cái type mới chạy được
   async FilterTheoProvinceTypeKhoangGia(
     filter: string,
     province: string | null,
-    page: number,
-    limit: number,
+    page: number = 1,
+    limit: number = 8,
     khoanggia: number | [number, number] | null,
     district: string | null
 ): Promise<any> {
@@ -107,16 +106,11 @@ export class FiltersearchService {
       const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
       const skip = (page - 1) * parsedLimit;
       const take = parsedLimit;
-
-        // Xây dựng điều kiện lọc
         const whereClause: any = {};
-
-        // Lọc theo type
-        if (filter) {
-            whereClause.typePropertiesName = filter as type_properties_typePropertiesName;
+        if (filter !== null && filter !== undefined && filter !== "") {
+          whereClause.typePropertiesName = filter as type_properties_typePropertiesName;
         }
-
-        // Lọc theo province và district
+        //
         if (province || district) {
             whereClause.properties = {};
             if (province) {
@@ -139,6 +133,7 @@ export class FiltersearchService {
         whereClause.properties = {
             ...whereClause.properties,
             public_price: { gte: minPrice, lte: maxPrice }
+            
         };
 
         // Truy vấn dữ liệu đã lọc và phân trang
@@ -148,6 +143,7 @@ export class FiltersearchService {
                 include: { properties: true },
                 skip: skip,
                 take: take,
+              
             }),
             this.prisma.type_properties.count({ where: whereClause })
         ]);
