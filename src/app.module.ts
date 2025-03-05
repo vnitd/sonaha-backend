@@ -15,6 +15,7 @@ import { NotificationModule } from './notification/notification.module';
 import { StatsModule } from './stats/stats.module';
 import { FiltersearchModule } from './filtersearch/filtersearch.module';
 import { ProvinceModule } from './province/province.module';
+import { ContactModule } from './contact/contact.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -32,7 +33,8 @@ import { ProvinceModule } from './province/province.module';
     NotificationModule,
     StatsModule,
     FiltersearchModule,
-    ProvinceModule,  
+    ProvinceModule,
+    ContactModule,  
   ],
   controllers: [AppController],
   providers: [AppService],
