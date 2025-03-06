@@ -34,9 +34,9 @@ async searchProperties(
   @Get("/FilterPhanTrangTheoType")
   async getFuckFilter(
     @Query('type') type:string,
+    @Res() res:Response,
     @Query('page') page: number = 1,  // số trang đang đứng
-    @Query('limit') limit: number = 10,  // số phần tử của 1 trang
-    @Res() res:Response
+    @Query('limit') limit: number = 10  // số phần tử của 1 trang
   ):Promise<void>{
 
     try {
@@ -75,8 +75,6 @@ async getFilteredProperties(
     console.log(province);
     console.log(khoanggia);
     console.log(district);
-    // console.log(limit);
-    // console.log(page);
     
     
     // Gọi service để lấy kết quả lọc

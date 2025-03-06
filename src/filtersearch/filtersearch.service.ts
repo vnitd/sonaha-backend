@@ -97,10 +97,11 @@ export class FiltersearchService {
   async FilterTheoProvinceTypeKhoangGia(
     filter: string,
     province: string | null,
+
+    khoanggia: number | [number, number] | null,
+    district: string | null,
     page: number = 1,
     limit: number = 8,
-    khoanggia: number | [number, number] | null,
-    district: string | null
 ): Promise<any> {
     try {
       const parsedLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
