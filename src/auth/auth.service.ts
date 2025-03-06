@@ -17,7 +17,7 @@ export class AuthService {
   ) {}
 
   // login với register nằm ở đây
-  async Login(body: LoginDto): Promise<string> {
+  async Login(body: LoginDto): Promise<{token:string;user:any}> {
     try {
       const { email, password } = body;
       const checkUserAdmin = await this.prisma.users.findFirst({
@@ -55,8 +55,9 @@ export class AuthService {
         where: { user_id: checkUserAdmin.user_id },
         data: { refresh_token: refToken, access_token: token },
       });
+      
+      return { token, user: {...checkUserAdmin, password: undefined,refToken:undefined,access_token:undefined,refresh_token:undefined} };
 
-      return token;
     } catch (error) {
       throw new Error(error);
     }
@@ -158,6 +159,23 @@ export class AuthService {
     }
 }
 
+async checkToken(access_token: string) {
+  try {
+    const userRole = await this.prisma.users.findFirst({
+      where: { access_token }
+    });
+    
+    if (!userRole) {
+      throw new Error("lỗi sai token");
+    }
+
+
+    return userRole.role_name;
+  } catch (error) {
+    throw new Error(error.message || "Lỗi hệ thống");
+  }
+}
+
   
   // 
   async LoginFacebook(
@@ -231,5 +249,5 @@ export class AuthService {
       return checkAdmin
     }
   }
- 
+
 }

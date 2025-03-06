@@ -52,9 +52,9 @@ export class PropritiesController {
         createProprityDto.thumbnail_url = uploadResult.secure_url;
 
         const checkAdmin = req.user.userId;
-        await this.propritiesService.create(+checkAdmin, createProprityDto);
+        const result =  await this.propritiesService.create(+checkAdmin, createProprityDto);
 
-        return res.status(200).json({ message: 'create success' }); // Trả về thông điệp thành công
+        return res.status(200).json({id : result}); // Trả về thông điệp thành công
       } catch (error) {
         throw new Error(error.message);
       }

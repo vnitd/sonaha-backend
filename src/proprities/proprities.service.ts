@@ -67,7 +67,7 @@ export class PropritiesService {
         },
       });
 
-      return `Property with ID: ${newProperty.property_id} created successfully`;
+      return `${newProperty.property_id}`;
     } else {
       throw new Error('Permission denied');
     }
@@ -91,9 +91,10 @@ export class PropritiesService {
               users: true,
             },
           },
-          type_properties:true
+          type_properties:true,
+          property_images:true
         },
-      
+
       });
   
       return renderAllProperties
@@ -230,6 +231,7 @@ export class PropritiesService {
             house_number: updateProprityDto.house_number,
             address: updateProprityDto.address,
             description_detail: updateProprityDto.description_detail,
+            
           },
         });
   

@@ -11,10 +11,7 @@ async function bootstrap() {
 
   // Add validation input
   app.useGlobalPipes(new ValidationPipe());
-
-  // Enable CORS
   app.enableCors({
-    
     origin: ['http://localhost:3000'], // Các domain được phép
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Các phương thức HTTP được phép
     credentials: true, // Cho phép gửi cookie

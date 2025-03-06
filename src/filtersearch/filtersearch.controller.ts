@@ -28,55 +28,79 @@ async searchProperties(
 }
 
 
-  // phân trang theo types 
-  @Get('/filterTypes')
-  async getFilterTypes(
-    @Res() res,
-    @Query('type') type :string ,
-    @Query('page') page :number ,
-    @Query('limit') limit :number,
-  ) {
-    try {
-      const data = await this.filtersearchService.filterTheoType(
-        type,
-        Number(page),
-        Number(limit),
-      );
 
-      return res.status(200).json({
-        data: data.data,
-        pagination: data.pagination,
-      });
+
+  // phân trang theo kiểu, ở đây, be sẽ quy định số bản ghi mỗi trang
+  @Get("/FilterPhanTrangTheoType")
+  async getFuckFilter(
+    @Query('type') type:string,
+    @Res() res:Response,
+    @Query('page') page: number = 1,  // số trang đang đứng
+    @Query('limit') limit: number = 10  // số phần tử của 1 trang
+  ):Promise<void>{
+
+    try {
+      const result = await this.filtersearchService.getFuckFilter(type,+page, +limit)
+      res.status(HttpStatus.OK).json(result)
     } catch (error) {
-      return res.status(500).json({
-        message: 'Internal Server Error',
-        error: error.message,
-      });
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message:error})
     }
   }
 
-  // phân trang theo province
-  @Get('/filterPropertiesProvince')
-  async getFilterProvince(
-    // trang mặc định là 1, limit là 10
-    @Query('Province') search: string,
-    @Res() res: Response,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-  ): Promise<void> {
-    try {
-      const queryConditions = {};
-      if (search) {
-        queryConditions['name'] = { $regex: search, $options: 'i' }; // tìm kiếm không phân biệt chữ hoa/thường
-      }
-      const results = await this.filtersearchService.filterTheoProvince(
-        +page,
-        +limit,
-        search,
-      );
-      res.status(HttpStatus.OK).json(results);
-    } catch (error) {
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(error);
+  @Get('filterTinhThanhTypeKhoangGia')
+async getFilteredProperties(
+  @Query('type') type: string | null, // Loại bất động sản có thể không có
+  @Query('province') province: string | null, // Tỉnh có thể không có
+  @Query('district') district: string | null, // Quận có thể không có
+  @Query('page') page: number, // Phân trang
+  @Query('limit') limit: number, // Số lượng trang
+  @Query('price') price: string | null, // Khoảng giá có thể không có
+) {
+  try {
+    // Kiểm tra nếu không có 'type' thì lấy tất cả các type
+    if (!type) {
+      type = ''; // Cập nhật để lấy tất cả các loại
     }
+    let khoanggia: number | [number, number] | null = null;
+    if (price) {
+      const priceRange = price.split('-');
+      if (priceRange.length === 2) {
+        khoanggia = [parseInt(priceRange[0]), parseInt(priceRange[1])];
+      } else {
+        khoanggia = parseInt(priceRange[0]);
+      }
+    }
+
+    console.log(type);
+    console.log(province);
+    console.log(khoanggia);
+    console.log(district);
+    
+    
+    // Gọi service để lấy kết quả lọc
+    const result = await this.filtersearchService.FilterTheoProvinceTypeKhoangGia(
+      type, 
+      province, 
+   
+      khoanggia, 
+      district,
+      page, 
+      limit, 
+    );
+
+    return {
+      statusCode: 200,
+      data: result,
+    };
+    
+  } catch (error) {
+    return {
+      statusCode: 500,
+      message: 'Internal server error',
+    };
   }
 }
+
+
+}
+

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
@@ -25,7 +25,7 @@ export class AuthController {
     @Res() res: Response,
   ): Promise<Response<string>> {
     const result = await this.authService.Login(body);
-    return res.status(200).json({ message: 'oce oce oce', result });
+    return res.status(200).json({ result });
   }
 
   // register
@@ -79,7 +79,7 @@ async self(
     if (!result) {
       return res.status(404).json({ message: "User not found" });
     }
-    return res.status(200).json(result);
+    return res.status(200).json({...result, password: undefined, access_token: undefined, refresh_token: undefined});
   } catch (error) {
     return res.status(500).json({ message: "Internal Server Error", error });
   }
@@ -125,6 +125,22 @@ async resetPass(@Body() payload: { password: string; reset_token: string }) {
 
   prisma = new PrismaClient();
 
+  @Get("/checkToken")
+async checkToken(
+  @Req() req: Request,
+  @Res() res: Response,
+  @Query('token') token: string, 
+): Promise<Response<any>> {
+  try {
+   const userRole =  await this.authService.checkToken(token);  
+    return res.status(200).json({ role: userRole});
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ role: null });
+  }
+}
+
+
   @Post('/extend-token')
   async extendToken(@Req() req: Request, @Res() res: Response) {
     try {
@@ -153,4 +169,5 @@ async resetPass(@Body() payload: { password: string; reset_token: string }) {
       return res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   }
+  
 }

@@ -19,7 +19,7 @@ export class ProvinceService {
   }
 
   // Lấy tất cả các quận/huyện theo provinceId
-  async findDistrictsByProvince(provinceId: number) {
+  async findDistrictsByProvince(provinceId: string) {
     return this.prisma.districts.findMany({
       where: {
         province_code: provinceId.toString(),
