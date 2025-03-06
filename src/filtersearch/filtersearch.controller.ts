@@ -81,10 +81,11 @@ async getFilteredProperties(
     const result = await this.filtersearchService.FilterTheoProvinceTypeKhoangGia(
       type, 
       province, 
+   
+      khoanggia, 
+      district,
       page, 
       limit, 
-      khoanggia, 
-      district
     );
 
     return {

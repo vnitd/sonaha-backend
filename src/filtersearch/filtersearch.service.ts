@@ -97,7 +97,6 @@ export class FiltersearchService {
   async FilterTheoProvinceTypeKhoangGia(
     filter: string,
     province: string | null,
-
     khoanggia: number | [number, number] | null,
     district: string | null,
     page: number = 1,
