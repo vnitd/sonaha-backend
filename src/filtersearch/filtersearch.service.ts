@@ -3,7 +3,6 @@ import {
   PrismaClient,
   type_properties_typePropertiesName,
 } from '@prisma/client';
-import { PropertyType } from './dto/create-filtersearch.dto';
 
 @Injectable()
 export class FiltersearchService {
