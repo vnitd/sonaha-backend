@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateContactDto } from './dto/create-contact.dto';
-import { UpdateContactDto } from './dto/update-contact.dto';
+
 import { PrismaClient } from '@prisma/client';
 import { EmailService } from 'src/email/email.service';
 
@@ -15,7 +15,7 @@ export class ContactService {
  async create(createContactDto: CreateContactDto) {
 
     try {
-      const result = await this.prisma.contact_forms.create({
+      await this.prisma.contact_forms.create({
         // phone mình để string nha
         data:{
           name:createContactDto.name,
@@ -81,13 +81,5 @@ export class ContactService {
   } catch (error) {
     return error
   }
-  }
-
-  update(id: number, updateContactDto: UpdateContactDto) {
-    return `This action updates a #${id} contact`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} contact`;
   }
 }
