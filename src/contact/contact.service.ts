@@ -26,7 +26,7 @@ export class ContactService {
         // sau khi nhập vô, chắc là có cái mail gửi tới cái người đó luôn ha
       }) 
       const userText = `
-        Cảm ơn bạn ${createContactDto.name} đã gửi yêu cầu tư vấn dự án nhà đất.`;
+        Cảm ơn bạn ${createContactDto.name} đã gửi yêu cầu tư vấn dự án nhà đất. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất. Chân thành cảm ơn!`;
       const userHtml = `
         <h1>Cảm ơn bạn ${createContactDto.name}!</h1>
         <p>Chúng tôi đã nhận được yêu cầu tư vấn dự án nhà đất của bạn.</p>
