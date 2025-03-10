@@ -11,9 +11,6 @@ export class UpdateBannerDto {
   @ApiHideProperty()
   img_url: string;
 
-  @ApiProperty({ description: "Liên kết URL của banner",required:false })
-  link_url: string;
-
   @ApiProperty({ description: "Ngày kết thúc của banner", type: Date,required:false })
   @IsDateString()
   end_date: string; 

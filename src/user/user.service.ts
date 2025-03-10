@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import { plainToInstance } from 'class-transformer';
+import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { PrismaClient } from '@prisma/client';
 import { UserDto } from './dto/user.dto';
-import { plainToInstance } from 'class-transformer';
-import * as bcrypt from 'bcrypt'
-import { CloudUploadService } from 'src/shared/cloudUpload.service';
 @Injectable()
 export class UserService {
   constructor(
@@ -130,25 +130,8 @@ export class UserService {
         throw new Error('Không thể xóa admin');
       }
   
-      const saves = await this.prisma.save.findMany({
-        where: { user_id: id },
-      });
-  
-      if (saves.length > 0) {
-        await this.prisma.save.deleteMany({
-          where: { user_id: id },
-        });
-      }
-      // xóa user trong trans 
-      const trans = await this.prisma.transactions.findMany({
-        where: { moderator_id: id },
-      });
-  
-      if (trans.length > 0) {
-        await this.prisma.transactions.deleteMany({
-          where: { moderator_id: id },
-        });
-      }
+    
+     
       //
       const comments = await this.prisma.comments.findMany({
         where: { user_id: id },

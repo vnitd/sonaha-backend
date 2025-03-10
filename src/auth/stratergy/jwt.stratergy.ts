@@ -1,8 +1,8 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
 import { PrismaClient } from '@prisma/client';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 import { KeyService } from 'src/proprities/key/key.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,7 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: publicKey,
-      algorithm: ['RS256'],
+      algorithms: ['RS256'],
     });
   }
   prisma = new PrismaClient();

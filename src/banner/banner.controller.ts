@@ -1,114 +1,74 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, Res, BadRequestException, UseGuards, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, NotFoundException, Post, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { Response } from 'express';
+import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
+import { PropertyService } from 'src/proprities/proprities.service'; // Thêm import
+import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { BannerService } from './banner.service';
 import { CreateBannerDto } from './dto/create-banner.dto';
-import { CloudUploadService } from 'src/shared/cloudUpload.service';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
-import { ApiBearerAuth, ApiConsumes, ApiResponse } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
-import { UpdateBannerDto } from './dto/update-banner.dto';
 
 @Controller('Banner')
 export class BannerController {
   constructor(
     private readonly bannerService: BannerService,
-    private readonly cloudUploadService: CloudUploadService
+    private readonly cloudUploadService: CloudUploadService,
+    private readonly propertyService: PropertyService // Thêm service để lấy thông tin property
   ) {}
 
   @Post('/newBanner')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('img')) // lấy tên từ dto
+  @UseInterceptors(FileInterceptor('img')) // lấy tên từ DTO
   async create(
     @Body() createBannerDto: CreateBannerDto,
     @UploadedFile() file: Express.Multer.File,
     @Res() res: Response,
     @Req() req
   ): Promise<any> {
-    if (file) {
-      try {
-        const { end_date } = createBannerDto;
-        const parsedEndDate = new Date(end_date);
-        if (isNaN(parsedEndDate.getTime())) {
-          throw new BadRequestException('Ngày kết thúc không hợp lệ');
-        }
-        createBannerDto.end_date_hide = parsedEndDate; 
-        const uploadResult = await this.cloudUploadService.uploadImage(file, 'Banner Image');
-        createBannerDto.img_url = uploadResult.secure_url;
-        const checkAdmin = req.user.userId
-        await this.bannerService.create(createBannerDto,checkAdmin);
-        return res.status(200).json({message:'oce'})
-      } catch (error) {
-        console.error(error);
-        throw new BadRequestException('Lỗi trong quá trình xử lý');
-      }
-    } else {
+    if (!file) {
       throw new BadRequestException('Ảnh không được để trống');
     }
-  }
 
-  @Get('/getAllBanner')
-  async findAll(): Promise<any[]> {
-    return await this.bannerService.findAllBanner();
-  }
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('img'))
-  async update(@Param('id') id: number,
-  @UploadedFile() file: Express.Multer.File,
-   @Body() updateBannerDto: UpdateBannerDto,
-   @Req() req,
-   @Res() res:Response
-):Promise<any> {
-  if (file) {
     try {
+      const { propertyID, end_date } = createBannerDto;
+
+      // Kiểm tra ngày kết thúc
+      const parsedEndDate = new Date(end_date);
+      if (isNaN(parsedEndDate.getTime())) {
+        throw new BadRequestException('Ngày kết thúc không hợp lệ');
+      }
+
+      // Kiểm tra property có tồn tại không
+      const property = await this.propertyService.findOne(propertyID);
+      if (!property) {
+        throw new NotFoundException('Không tìm thấy sản phẩm liên kết');
+      }
+
+      // Upload ảnh lên Cloudinary hoặc server
       const uploadResult = await this.cloudUploadService.uploadImage(file, 'Banner Image');
-      updateBannerDto.img_url = uploadResult.secure_url;
-    
+
+      // Lấy thông tin admin từ JWT
+      const checkAdmin = req.user.userId;
+
+      // Tạo banner mới
+      const newBanner = await this.bannerService.create({
+        title: createBannerDto.title,
+        img_url: uploadResult.secure_url,
+        propertyID: createBannerDto.propertyID, // Chỉ lưu propertyId, không lưu dư thừa propertyDetail
+        end_date: createBannerDto.end_date,
+      }, checkAdmin);
+
+      return res.status(200).json({
+        message: 'Tạo banner thành công',
+        banner: newBanner,
+        property: property // Trả về luôn thông tin property để frontend hiển thị
+      });
+
     } catch (error) {
       console.error(error);
       throw new BadRequestException('Lỗi trong quá trình xử lý');
-    }
-  } else {
-    const { end_date } = updateBannerDto;
-    const parsedEndDate = new Date(end_date);
-    if (isNaN(parsedEndDate.getTime())) {
-      throw new BadRequestException('Ngày kết thúc không hợp lệ');
-    }
-    updateBannerDto.end_date_hide = parsedEndDate; 
-    const checkAdmin = req.user.userId
-    await this.bannerService.update(id,updateBannerDto,checkAdmin);
-    return res.status(200).json({message:'oce'})
-  } }
-
-  @Delete('/deleteBanner/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiConsumes('multipart/form-data')
-  @ApiResponse({
-    status: 200,
-    description: 'Banner deleted successfully',
-    type: String,
-  })
-  async remove(@Param('id') id: string,
-  @Req() req,
-  @Res() res:Response
-) {
-  const checkAmin = req.user.userId
-     await this.bannerService.remove(+id,+checkAmin);
-    return res.status(200).json({message:'delete success'})
-  }
-  // kiểm tra lại 
-  @Get('check-expired')
-  async checkExpiredBanners() {
-    try {
-      await this.bannerService.checkExpiredBanners();
-      return { message: 'Expired banners have been checked and updated successfully.' };
-    } catch (error) {
-      return { message: 'Error while checking expired banners.', error: error.message };
     }
   }
 }

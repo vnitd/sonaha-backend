@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException} from '@nestjs/common';
-import { UpdateProprityDto } from './dto/update-proprity.dto';
-import { CreatePropertyDto } from './dto/create-proprity.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { AlbumService } from 'src/album/album.service';
+import { CloudUploadService } from 'src/shared/cloudUpload.service';
+import { CreatePropertyDto } from './dto/create-proprity.dto';
+import { UpdatePropertyDto } from './dto/update-proprity.dto';
 
 @Injectable()
-export class PropritiesService {
+export class PropertyService {
   prisma = new PrismaClient();
   constructor(
     private readonly cloudUploadService :CloudUploadService,
@@ -21,49 +21,53 @@ export class PropritiesService {
     if (!checkAdmin) {
       throw new Error('User not found');
     }
+    const typeId = Number(createProprityDto.type_propertiesID);
 
+    // Kiểm tra type_propertiesID có tồn tại không
+    const typeExists = await this.prisma.type_properties.findUnique({
+      where: { typePropertiesId: typeId },
+    });
+
+    if (!typeExists) {
+      throw new Error(`Type Property với ID ${typeId} không tồn tại!`);
+    }
     const {
       name,
-      description,
-
-
+      public_price,
+      area,
       status,
-  
+      thumbnail_url,
       province,
       district,
       ward,
       house_direction,
-  
-      legal_status,
-      balcony_direction,
- 
-      furniture,
       house_number,
-      description_detail,
-      thumbnail_url,
+      balcony_direction,
+      legal_status,
+      road_surface,
+      furniture,
+      type_propertiesID
     } = createProprityDto;
-
     if (checkAdmin.role_name === 'admin' || checkAdmin.role_name === 'manager') {
       const newProperty = await this.prisma.properties.create({
         data: {
           name,
-          description,
-          public_price : Number(createProprityDto.public_price),  // Không cần chuyển đổi nữa vì đã là kiểu number
-          area : Number(createProprityDto.area),           // Không cần chuyển đổi nữa vì đã là kiểu number
+          public_price ,  
+          area ,           
           status,
-          thumbnail_url,
-          cost_price : Number(createProprityDto.cost_price),     // Không cần chuyển đổi nữa vì đã là kiểu number
+          thumbnail_url,    
           province,
           district,
           ward,
           house_direction,
-          number_of_bedrooms : Number(createProprityDto.number_of_bathrooms),  // Không cần chuyển đổi nữa vì đã là kiểu number
+          number_of_bedrooms : Number(createProprityDto.number_of_bedrooms),  // Không cần chuyển đổi nữa vì đã là kiểu number
           legal_status,
           balcony_direction,
-          number_of_bathrooms : Number(createProprityDto.number_of_bedrooms), // Không cần chuyển đổi nữa vì đã là kiểu number
+          number_of_bathrooms : Number(createProprityDto.number_of_bathrooms), // Không cần chuyển đổi nữa vì đã là kiểu number
           furniture,
+          road_surface,
           house_number,
-          description_detail,
+          type_propertiesID : Number(createProprityDto.type_propertiesID),
         },
       });
 
@@ -72,112 +76,101 @@ export class PropritiesService {
       throw new Error('Permission denied');
     }
   }
-  async findAll(): Promise<any> {
-    try {
-      const renderAllProperties = await this.prisma.properties.findMany({
-        include: {
-          transactions: {
-            include: {
-              users_transactions_moderator_idTousers: {
-                select: {
-                  name: true,
-                  phone: true,
-                },
-              },
-            },
-          },
-          save: {
-            select: {
-              users: true,
-            },
-          },
-          type_properties:true,
-          property_images:true
-        },
-
-      });
   
-      return renderAllProperties
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-  
-// nếu như trong này cập nhật là sold thì bên khác cũng cập nhật bản ghi
-  //search
-  // bảng save sẽ cho admin biết ai là người đang lưu
-  // lấy data để thực hiện tư vấn
-    
-  async search(keyword: string) {
-    if (!keyword) {
-      throw new NotFoundException('Keyword is required');
-    }
-
+  async findAll({
+    page = 1,
+    limit = 10,
+    search = '',
+    sort = 'property_id:asc',
+  }: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sort?: string;
+  }): Promise<{
+    data: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     try {
-      const properties = await this.prisma.properties.findMany({
-        where: {
+      const offset = (page - 1) * limit;
+  
+      const [sortField, sortOrder] = sort.split(':');
+      const orderBy = sortField
+        ? { [sortField]: sortOrder === 'desc' ? 'desc' : 'asc' }
+        : { property_id: 'asc' };
+  
+      const where = {
+        deleted_at: null,
+        ...(search && {
           name: {
-            contains: keyword.toLowerCase(),
+            contains: search.toLowerCase(),
+            mode: 'insensitive',
           },
-        },
-      });
-
-      if (properties.length === 0) {
+        }),
+      };
+  
+      const [data, total] = await this.prisma.$transaction([
+        this.prisma.properties.findMany({
+          where,
+          skip: offset,
+          take: limit,
+          include: {
+            property_images: true,
+            content_property: true,
+            comments: true,
+            banners: true,
+          },
+        }),
+        this.prisma.properties.count({ where }),
+      ]);
+  
+      if (data.length === 0 && search) {
         throw new NotFoundException('No properties found for this keyword');
       }
-
-      return properties;
+  
+      const formattedData = data.map((property) => ({
+        ...property,
+        groupedData: {
+          comments: property.comments,
+          property_images: property.property_images,
+          banners: property.banners,
+          content_property: property.content_property,
+        },
+        comments: undefined,
+        property_images: undefined,
+        banners: undefined,
+        content_property: undefined,
+      }));
+  
+      return {
+        data: formattedData,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     } catch (error) {
-      throw new Error(error.message);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new Error(`Error fetching properties: ${error.message}`);
     }
   }
   
-  async findAllWithPagination(page: number, limit: number) {
-    const offset = (page - 1) * limit; 
-    const [data, total] = await this.prisma.$transaction([
-      this.prisma.properties.findMany({
-        skip: offset,
-        take: limit, 
-        include: {
-          transactions: {
-            include: {
-              users_transactions_moderator_idTousers: {
-                select: { name: true, phone: true },
-              },
-            },
-          },
-          save: { select: { users: true } },
-          type_properties:true
-        },
-      }),
-      this.prisma.properties.count(), // Đếm tổng số bản ghi
-    ]);
-  
-    return {
-      data,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-  
-
   
   async findOne(id: number):Promise<any> {
     try {
       const detail = await this.prisma.properties.findFirst({
         where: {
-          property_id: id, // Điều kiện lọc
+          property_id: id,
         },
         include: {
-          transactions: { // Quan hệ 1-n hoặc n-n
-            include: { // Bao gồm thêm quan hệ trong bảng transactions
-              users_transactions_moderator_idTousers:true, // Bao gồm dữ liệu của bảng users
-            },
-          },
-          property_images: true, // Bao gồm dữ liệu của bảng property_images
-          type_properties: true, // Bao gồm dữ liệu của bảng type_properties
+          property_images:true,
+          content_property: true,
+          comments: true,
         },
       });
       
@@ -186,161 +179,177 @@ export class PropritiesService {
       return error
     }
   }
-  // cập nhật là sold thì nó sẽ tự update trong bảng thống kê khi cập nhật là sold xong thì nó không cho cập nhật nữa
-  // cái này mình sẽ làm bên phần fe
-  // chỉ có admin với manager mới được update cái properties
-  async updateProperty(
-    idProperty: number,
-    userId: number,
-    updateProprityDto: UpdateProprityDto
-  ): Promise<string> {
-    try {
-      const checkAdmin = await this.prisma.users.findFirst({
-        where: {
-          user_id: Number(userId),
-        },
-      });
-  
-      if (!checkAdmin) {
-        throw new Error('User không tồn tại');
-      }
-  
-      if (checkAdmin.role_name === 'admin' || checkAdmin.role_name === 'manager') {
-        // Cập nhật property
-        await this.prisma.properties.update({
-          where: {
-            property_id: Number(idProperty),
-          },
-          data: {
-            name: updateProprityDto.name,
-            description: updateProprityDto.description,
-            public_price: Number(updateProprityDto.public_price),
-            area: Number(updateProprityDto.area),
-            status: updateProprityDto.status,
-            thumbnail_url: updateProprityDto.thumbnail_url,
-            cost_price: Number(updateProprityDto.cost_price),
-            province: updateProprityDto.province,
-            district: updateProprityDto.district,
-            ward: updateProprityDto.ward,
-            house_direction: updateProprityDto.house_direction,
-            number_of_bedrooms: Number(updateProprityDto.number_of_bedrooms),
-            legal_status: updateProprityDto.legal_status,
-            balcony_direction: updateProprityDto.balcony_direction,
-            number_of_bathrooms: Number(updateProprityDto.number_of_bathrooms),
-            furniture: updateProprityDto.furniture,
-            house_number: updateProprityDto.house_number,
-            address: updateProprityDto.address,
-            description_detail: updateProprityDto.description_detail,
-            
-          },
-        });
-  
-        // Nếu status là "sold", cập nhật bảng daily_transactions_stats
-        if (updateProprityDto.status === 'sold') {
-          const today = new Date();
-          const formattedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()); // Chỉ lấy ngày, không lấy giờ
-  
-          // Tìm hoặc tạo mới thống kê hàng ngày
-          await this.prisma.daily_transactions_stats.upsert({
-            where: {
-              transaction_date: formattedDate, // Cần đảm bảo transaction_date là unique
-            },
-            update: {
-              transaction_total_perday: { increment: 1 }, // Tăng số lượng giao dịch
-              total_revenue_perday: {
-                increment: Number(updateProprityDto.public_price) || 0, // Tăng doanh thu
-              },
-            },
-            create: {
-              transaction_date: formattedDate,
-              transaction_total_perday: 1,
-              total_revenue_perday: Number(updateProprityDto.public_price) || 0,
-            },
-          });
-        }
-  
-        return 'Update Thành Công';
-      } else {
-        throw new Error('Unauthorized: Bạn không có quyền cập nhật');
-      }
-    } catch (error) {
-      throw new Error(`Cập nhật thất bại: ${error.message}`);
-    }
-  }
-  
-  
-// admin với manager có quyền xóa
-async remove(userId: number, id: number): Promise<string> {
-  try {
+  async update(id: number,property_id:number, updatePropertyDto: UpdatePropertyDto): Promise<string> {
     const checkAdmin = await this.prisma.users.findFirst({
-      where: {
-        user_id: Number(userId),
-      },
+      where: { user_id: id },
     });
+  
+    if (!checkAdmin) {
+      throw new Error('User not found');
+    }
+  
     if (checkAdmin.role_name === 'admin' || checkAdmin.role_name === 'manager') {
-      // Xóa các bản ghi trong bảng `save`
-      const save = await this.prisma.save.findMany({
-        where: {
-          property_id: Number(id),
+      const updatedProperty = await this.prisma.properties.update({
+        where: { property_id: property_id }, // Giả sử bạn truyền property_id trong DTO hoặc từ param
+        data: {
+          name: updatePropertyDto.name,
+          public_price: updatePropertyDto.public_price,
+          area: updatePropertyDto.area,
+          status: updatePropertyDto.status,
+          thumbnail_url: updatePropertyDto.thumbnail_url,
+          province: updatePropertyDto.province,
+          district: updatePropertyDto.district,
+          ward: updatePropertyDto.ward,
+          house_direction: updatePropertyDto.house_direction,
+          number_of_bedrooms: updatePropertyDto.number_of_bedrooms
+            ? Number(updatePropertyDto.number_of_bedrooms)
+            : undefined,
+          legal_status: updatePropertyDto.legal_status,
+          balcony_direction: updatePropertyDto.balcony_direction,
+          number_of_bathrooms: updatePropertyDto.number_of_bathrooms
+            ? Number(updatePropertyDto.number_of_bathrooms)
+            : undefined,
+          furniture: updatePropertyDto.furniture,
+          house_number: updatePropertyDto.house_number,
+          road_surface: updatePropertyDto.road_surface,
+          type_propertiesID: updatePropertyDto.type_propertiesID,
         },
       });
-      if (save.length > 0) {
-        await this.prisma.save.deleteMany({
-          where: {
-            property_id: Number(id),
-          },
-        });
-      }
-      const commentTest = await this.prisma.comments.findMany({
-        where: {
-          property_id: Number(id),
-        },
-      });
-      let commentIds: number[] = [];
-      if (commentTest.length > 0) {
-        commentIds = commentTest.map((comment) => comment.comment_id); // Lấy ra danh sách `comment_id`
-        console.log('Danh sách comment_id:', commentIds);
-        await this.prisma.comments.deleteMany({
-          where: {
-            property_id: Number(id),
-          },
-        });
-      }
-
+  
+      return `${updatedProperty.property_id}`;
+    } else {
+      throw new Error('Permission denied');
     }
-    const transDelete = await this.prisma.transactions.findMany({
-      where: {
-        property_id: Number(id),
-      },
-    });
-    if (transDelete.length > 0) {
-      await this.prisma.transactions.deleteMany({
-        where: { property_id: Number(id) },
-      });
-    }
-    const type = await this.prisma.type_properties.findMany({
-      where: {
-        propertyId: Number(id),
-      },
-    });
-    if (type.length > 0) {
-      await this.prisma.type_properties.deleteMany({
-        where: {
-          propertyId: Number(id),
-        },
-      });
-    }
-
-    await this.albumService.removeAll(id,userId)
-    await this.prisma.properties.delete({
-      where: {
-        property_id: Number(id),
-      },
-    });
-    // check kĩ lại chỗ delete
-    return 'Property and related resources deleted successfully';
-  } catch (error) {
-    console.error(`Error removing property: ${error.message}`);
-    throw new Error(`Error removing property: ${error.message}`);
   }
-}}
+  async getTrashedProperties(userId: number): Promise<any[]> {
+    const checkAdmin = await this.prisma.users.findFirst({
+      where: { user_id: userId },
+    });
+
+    if (!checkAdmin) {
+      throw new Error('User not found');
+    }
+
+    if (checkAdmin.role_name !== 'admin' && checkAdmin.role_name !== 'manager') {
+      throw new Error('Permission denied');
+    }
+
+    const trashedProperties = await this.prisma.properties.findMany({
+      where: {
+        deleted_at: {
+           not: null ,
+        },
+      },
+    });
+    console.log(trashedProperties);
+    return trashedProperties;
+  } catch (error: any) {
+    console.error('Error fetching trashed properties:', error);
+    throw new Error('Failed to fetch trashed properties');
+  }
+  // Di chuyển tài sản vào thùng rác
+  async moveToTrash(userId: number, propertyId: number): Promise<string> {
+    const checkAdmin = await this.prisma.users.findFirst({
+      where: { user_id: userId },
+    });
+
+    if (!checkAdmin) {
+      throw new Error('User not found');
+    }
+
+    if (checkAdmin.role_name === 'admin' || checkAdmin.role_name === 'manager') {
+      // Kiểm tra xem tài sản đã bị xóa chưa (deleted_at không null)
+      const currentProperty = await this.prisma.properties.findUnique({
+        where: { property_id: propertyId },
+      });
+
+      if (!currentProperty) {
+        throw new Error('Property not found');
+      }
+
+      if (currentProperty.deleted_at) {
+        throw new Error('Property is already in trash');
+      }
+
+      const updatedProperty = await this.prisma.properties.update({
+        where: { property_id: propertyId },
+        data: {
+          deleted_at: new Date(), // Đặt deleted_at thành thời gian hiện tại
+        },
+      });
+
+      return `${updatedProperty.property_id}`;
+    } else {
+      throw new Error('Permission denied');
+    }
+  }
+
+  // Khôi phục tài sản từ thùng rác
+  async restoreFromTrash(userId: number, propertyId: number): Promise<string> {
+    const checkAdmin = await this.prisma.users.findFirst({
+      where: { user_id: userId },
+    });
+
+    if (!checkAdmin) {
+      throw new Error('User not found');
+    }
+
+    if (checkAdmin.role_name === 'admin' || checkAdmin.role_name === 'manager') {
+      // Kiểm tra xem tài sản có trong thùng rác không
+      const currentProperty = await this.prisma.properties.findUnique({
+        where: { property_id: propertyId },
+      });
+
+      if (!currentProperty) {
+        throw new Error('Property not found');
+      }
+
+      if (!currentProperty.deleted_at) {
+        throw new Error('Property is not in trash');
+      }
+
+      const updatedProperty = await this.prisma.properties.update({
+        where: { property_id: propertyId },
+        data: {
+          deleted_at: null, // Đặt deleted_at về null
+        },
+      });
+
+      return `${updatedProperty.property_id}`;
+    } else {
+      throw new Error('Permission denied');
+    }
+  }
+
+  // Xóa vĩnh viễn tài sản
+  async deletePermanently(userId: number, propertyId: number): Promise<void> {
+    const checkAdmin = await this.prisma.users.findFirst({
+      where: { user_id: userId },
+    });
+
+    if (!checkAdmin) {
+      throw new Error('User not found');
+    }
+
+    if (checkAdmin.role_name === 'admin' || checkAdmin.role_name === 'manager') {
+      // Kiểm tra xem tài sản có trong thùng rác không
+      const currentProperty = await this.prisma.properties.findUnique({
+        where: { property_id: propertyId },
+      });
+
+      if (!currentProperty) {
+        throw new Error('Property not found');
+      }
+
+      if (!currentProperty.deleted_at) {
+        throw new Error('Property must be in trash to delete permanently');
+      }
+
+      await this.prisma.properties.delete({
+        where: { property_id: propertyId },
+      });
+    } else {
+      throw new Error('Permission denied');
+    }
+  }
+}

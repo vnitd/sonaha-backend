@@ -1,38 +1,36 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  Res,
+  UploadedFile,
   UseGuards,
   UseInterceptors,
-  UploadedFile,
-  Res,
-  Req,
-  Query,
-  HttpStatus,
 } from '@nestjs/common';
-import { PropritiesService } from './proprities.service';
-import { CreatePropertyDto } from './dto/create-proprity.dto';
-import { UpdateProprityDto } from './dto/update-proprity.dto';
-import { CloudUploadService } from 'src/shared/cloudUpload.service';
-import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
-import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
-import { SearchDto } from './dto/search-properties.dto';
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { PrismaClient } from '@prisma/client';
+import { Response } from 'express';
+import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
+import { CloudUploadService } from 'src/shared/cloudUpload.service';
+import { CreatePropertyDto } from './dto/create-proprity.dto';
+import { UpdatePropertyDto } from './dto/update-proprity.dto';
+import { PropertyService } from './proprities.service';
 @Controller('proprities')
 export class PropritiesController {
   constructor(
-    private readonly propritiesService: PropritiesService,
+    private readonly propertyService: PropertyService,
     private readonly cloudUploadService: CloudUploadService,
   ) {}
   prisma = new PrismaClient();
-  @Post('/createProprityDto')
-  // role thì chắc là để admin với manager tạo
+  @Post('/createProprity')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
@@ -52,58 +50,39 @@ export class PropritiesController {
         createProprityDto.thumbnail_url = uploadResult.secure_url;
 
         const checkAdmin = req.user.userId;
-        const result =  await this.propritiesService.create(+checkAdmin, createProprityDto);
+        const result =  await this.propertyService.create(+checkAdmin, createProprityDto);
 
-        return res.status(200).json({id : result}); // Trả về thông điệp thành công
+    
+        return res.status(HttpStatus.CREATED).json({ id: result });
       } catch (error) {
-        throw new Error(error.message);
+        return res.status(error.getStatus ? error.getStatus() : HttpStatus.BAD_REQUEST).json({
+          message: error.message || 'Lỗi khi tạo property',
+        });
       }
     }
   }
 
-  // sẽ có 2 phương thức là getall và getDetail
-  // ví dụ như get all là lấy hết thì get detail nó sẽ nhả ra save-user với moderator-name chẳng hạn
-  // cái này cần xác thực, kiểu moderator hoặc manager hoặc admin sẽ lấy ra được chẳng hạn
   @Get()
-  async findAll(@Res() res: Response): Promise<any> {
-    try {
-      const listProperties = await this.propritiesService.findAll();
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-
-      if (listProperties.length === 0) {
-        res.status(404).json({ message: 'No properties found' });
-      } else {
-        res.status(200).json(listProperties);
-      }
-      return listProperties; 
-    } catch (error) {
-      res.status(500).json({ message: 'Internal Server Error', error: error.message });
-      throw new Error(error.message);
-    }
-  }
-
-  @Get('/getAllProprities')
-  async PhanTrang(
-    // GET /proprities/getAllProprities?page=2&limit=5
+  @ApiBearerAuth()
+  async findAll(
     @Query('page') page: number,
     @Query('limit') limit: number,
+    @Query('search') search: string = '',
+    @Query('sort') sort: string = 'property_id:asc',
+    @Req() req,
     @Res() res: Response,
-  ): Promise<any> {
+  ): Promise<void> {
     try {
-      const data = await this.propritiesService.findAllWithPagination(
-        +page,
-        +limit,
-      );
-      res.status(200).json(data);
+      const properties = await this.propertyService.findAll({ page, limit, search, sort });
+  
+      res.status(200).json({
+        message: 'Properties retrieved successfully',
+        ...properties,
+      });
     } catch (error) {
       res.status(500).json({ message: error.message });
-      throw new Error(error.message);
+      return;
     }
-  }
-
-  @Get('/search')
-  async search(@Query() query: SearchDto) {
-    return this.propritiesService.search(query.keyword);
   }
 
   @Get(':id')
@@ -112,7 +91,7 @@ export class PropritiesController {
     @Res() res: Response,
   ): Promise<Response> {
     try {
-      const detailProperty = await this.propritiesService.findOne(+id);
+      const detailProperty = await this.propertyService.findOne(+id);
       return res.status(HttpStatus.OK).json({ detailProperty });
     } catch (error) {
       return res
@@ -127,59 +106,148 @@ export class PropritiesController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('img'))
   async update(
-    @Param('id') id: number,
-    @Body() updateProprityDto: UpdateProprityDto,
+    @Param('id') id: string, // Thay number thành string vì route params mặc định là string
+    @Body() updatePropertyDto: UpdatePropertyDto,
     @Req() req,
     @Res() res: Response,
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<string> {
+  ): Promise<void> { // Thay Promise<string> thành Promise<void> vì không return string trực tiếp
     try {
-      const userId = req.user.userId;
+      const userId = req.user.userId; // Lấy userId từ JWT
+      const propertyId = Number(id); // Chuyển id từ string sang number
+
+      // Kiểm tra xem property có tồn tại không
       const currentProperty = await this.prisma.properties.findFirst({
-        where: { property_id: Number(id) },
+        where: { property_id: propertyId },
       });
       if (!currentProperty) {
-        res.status(404).send({ message: 'Property not found' });
+        res.status(404).json({ message: 'Property not found' });
         return;
       }
+
+      // Xử lý upload ảnh nếu có file
       if (file) {
-        const uploadResult = await this.cloudUploadService.uploadImage(
-          file,
-          'thumbnail',
-        );
-        updateProprityDto.thumbnail_url = uploadResult.secure_url;
+        const uploadResult = await this.cloudUploadService.uploadImage(file, 'thumbnail');
+        updatePropertyDto.thumbnail_url = uploadResult.secure_url;
+
+        // Xóa ảnh cũ nếu tồn tại
         if (currentProperty.thumbnail_url) {
           const urlParts = currentProperty.thumbnail_url.split('/');
           const publicId = urlParts.slice(-2).join('/').split('.')[0];
           await this.cloudUploadService.deleteImage(publicId);
         }
       }
-      await this.propritiesService.updateProperty(
-        +id,
-        +userId,
-        updateProprityDto,
+
+      // Gọi service để cập nhật property
+      const updatedPropertyId = await this.propertyService.update(
+        userId, // userId trước
+        propertyId, // propertyId sau
+        updatePropertyDto,
       );
-      res.status(200).send({ message: 'Update success' });
+
+      // Trả về response thành công
+      res.status(200).json({
+        message: 'Update success',
+        propertyId: updatedPropertyId,
+      });
     } catch (error) {
-      res.status(500).send({ message: error.message });
+      res.status(500).json({ message: error.message });
+      return;
     }
   }
 
-  // xóa properties, kiêm luôn xóa ảnh/ video trong cloud
-  @Delete('/deleteProperties/:id')
+  // Di chuyển tài sản vào thùng rác
+  @Patch('/move-to-trash/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async remove(
-    @Param('id') id: number,
-    @Res() res: Response,
+  async moveToTrash(
+    @Param('id') id: string,
     @Req() req,
-  ): Promise<any> {
+    @Res() res: Response,
+  ): Promise<void> {
     try {
       const userId = req.user.userId;
-      await this.propritiesService.remove(+userId, +id);
-      return res.status(200).json({ message: 'Delete success' });
+      const propertyId = Number(id);
+
+      const movedPropertyId = await this.propertyService.moveToTrash(userId, propertyId);
+
+      res.status(200).json({
+        message: 'Moved to trash successfully',
+        propertyId: movedPropertyId,
+      });
     } catch (error) {
-      return res.status(500).json(error);
+      res.status(500).json({ message: error.message });
+      return;
+    }
+  }
+  @Get('/trash')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getTrashedProperties(
+    @Req() req,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const userId = req.user.userId;
+
+      const trashedProperties = await this.propertyService.getTrashedProperties(userId);
+
+      console.log("trả về con ",trashedProperties);
+      res.status(200).json({
+        message: 'Retrieved trashed properties successfully',
+        data: trashedProperties,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+      return;
+    }
+  }
+  // Khôi phục tài sản từ thùng rác
+  @Patch('/restore-from-trash/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async restoreFromTrash(
+    @Param('id') id: string,
+    @Req() req,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const userId = req.user.userId;
+      const propertyId = Number(id);
+
+      const restoredPropertyId = await this.propertyService.restoreFromTrash(userId, propertyId);
+
+      res.status(200).json({
+        message: 'Restored from trash successfully',
+        propertyId: restoredPropertyId,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+      return;
+    }
+  }
+
+  // Xóa vĩnh viễn tài sản
+  @Delete('/delete-permanently/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async deletePermanently(
+    @Param('id') id: string,
+    @Req() req,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const userId = req.user.userId;
+      const propertyId = Number(id);
+
+      await this.propertyService.deletePermanently(userId, propertyId);
+
+      res.status(200).json({
+        message: 'Deleted permanently successfully',
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+      return;
     }
   }
 }

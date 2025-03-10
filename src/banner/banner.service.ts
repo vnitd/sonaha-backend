@@ -1,18 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { CreateBannerDto } from './dto/create-banner.dto';
-import { UpdateBannerDto } from './dto/update-banner.dto';
-import { GetBannerDto } from './dto/get-banner.dto';
+import { JwtService } from '@nestjs/jwt';
+import { Cron } from '@nestjs/schedule';
 import { PrismaClient } from '@prisma/client';
 import { plainToClass } from 'class-transformer';
-import { JwtService } from '@nestjs/jwt';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
-import { Cron } from '@nestjs/schedule';
+import { CreateBannerDto } from './dto/create-banner.dto';
+import { GetBannerDto } from './dto/get-banner.dto';
+import { UpdateBannerDto } from './dto/update-banner.dto';
 @Injectable()
 export class BannerService {
   prisma = new PrismaClient()
   constructor(
     private readonly jwtService : JwtService,
     private readonly cloudUploadService : CloudUploadService
+
   ){}
   async create(createBannerDto: CreateBannerDto,
     id:number
@@ -21,17 +22,16 @@ export class BannerService {
       const checkAmin = await this.prisma.users.findFirst({
         where:{user_id:id}
       })
-      // này đang để cho 3 cái role là admin, manager với employee là người có quyền thay đổi 
       if(checkAmin.role_name === 'user' || checkAmin.role_name === 'moderator'){
         throw new Error('không có quyền')
       }
-      const { tittle, img_url, link_url, end_date_hide } = createBannerDto;
+      const { title, img_url, propertyID, end_date} = createBannerDto;
       await this.prisma.banners.create({
         data: {
-          title:tittle,
+          title:title,
           image_url:img_url,
-          link_url,
-          end_date:end_date_hide,
+          propertyId:propertyID,
+          end_date:end_date,
         },
       });
       
@@ -70,11 +70,10 @@ export class BannerService {
         throw new Error('Banner không tồn tại');
       }
   
-         const { tittle, img_url, link_url, end_date_hide } = updateBannerDto;
+         const { tittle, img_url, end_date_hide } = updateBannerDto;
       const updatedData = {
         title: tittle || currentBanner.title,
         image_url: img_url || currentBanner.image_url,
-        link_url: link_url || currentBanner.link_url,
         end_date: end_date_hide || currentBanner.end_date,
       };
       if (img_url && img_url !== currentBanner.image_url) {
