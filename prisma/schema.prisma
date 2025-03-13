@@ -58,9 +58,8 @@ model type_properties {
 model properties {
   property_id         Int                          @id @default(autoincrement())
   name                String                       @db.VarChar(255)
-  public_price        String                      @db.VarChar(255)
   area                String                      
-  status              properties_status?           @default(available)
+  status              properties_status?        @default(available)
   thumbnail_url       String?                      @db.VarChar(255)
   created_at          DateTime?                    @default(now()) @db.Timestamp(0)
   updated_at          DateTime?                    @default(now()) @db.Timestamp(0)
@@ -68,35 +67,32 @@ model properties {
   province            String?                      @db.VarChar(255)
   district            String?                      @db.VarChar(255)
   ward                String?                      @db.VarChar(255)
-  house_direction     properties_house_direction
+  house_direction     String?
   number_of_bedrooms  Int?
   legal_status        String?                      @db.VarChar(255)
-  balcony_direction   properties_balcony_direction
+  balcony_direction   String?
   road_surface        String?                      @db.VarChar(255)
   number_of_bathrooms Int?
   furniture           String?                      @db.VarChar(255)
   house_number        String?                      @db.VarChar(50)
+  banner_status       Boolean                      @default(true)
   type_propertiesID   Int
   type_propertys      type_properties              @relation("TypePropertiesToProperties", fields: [type_propertiesID], references: [typePropertiesId], onDelete: NoAction, onUpdate: NoAction, map: "properties_ibfk_1")
 
   comments            comments[]
   property_images     property_images[]
-  banners             banners[]
   content_property    content_property[]
+  prices              Price[]
 
   @@index([type_propertiesID], map: "type_propertiesID")
 }
-
-model banners {
-  banner_id  Int        @id @default(autoincrement())
-  title      String     @db.VarChar(255)
-  image_url  String     @db.VarChar(255)
-  propertyId Int
-  end_date   DateTime?
-  status     Boolean    @default(true)
-  properties properties @relation(fields: [propertyId], references: [property_id], onDelete: NoAction, onUpdate: NoAction, map: "banners_ibfk_1")
-
-  @@index([propertyId], map: "propertyId")
+model Price {
+  id          Int      @id @default(autoincrement())
+  propertyId  Int
+  price_type  String   // "total" hoặc "per_m2"
+  amount      Float   // Giá trị
+  properties  properties @relation(fields: [propertyId], references: [property_id])  
+  @@index([propertyId], map: "properties")
 }
 
 model property_images {

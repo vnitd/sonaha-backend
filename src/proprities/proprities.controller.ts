@@ -1,8 +1,7 @@
 import {
   Body,
   Controller,
-  Delete,
-  Get,
+  Delete, Get,
   HttpStatus,
   Param,
   Patch,
@@ -12,24 +11,43 @@ import {
   Res,
   UploadedFile,
   UseGuards,
-  UseInterceptors,
+  UseInterceptors
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-import { PrismaClient } from '@prisma/client';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { JwtAuthGuard } from 'src/auth/stratergy/jwt.guard';
 import { CloudUploadService } from 'src/shared/cloudUpload.service';
 import { CreatePropertyDto } from './dto/create-proprity.dto';
+import { SearchDto } from './dto/search-properties.dto';
 import { UpdatePropertyDto } from './dto/update-proprity.dto';
 import { PropertyService } from './proprities.service';
+
+@ApiTags('Proprities')
 @Controller('proprities')
 export class PropritiesController {
   constructor(
     private readonly propertyService: PropertyService,
     private readonly cloudUploadService: CloudUploadService,
   ) {}
-  prisma = new PrismaClient();
+
+  @Get('/banner')
+  async findBanner() {
+    try {
+      return this.propertyService.findBanner();
+    } catch (error) {
+      console.log(error)
+    }
+  }
+  
+  @Get('/trash')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getTrashedProperties(@Req() req) {
+      return this.propertyService.getTrashedProperties(req.user.userId);
+      
+  }
+
   @Post('/createProprity')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -41,6 +59,9 @@ export class PropritiesController {
     @Res() res: Response,
     @Req() req,
   ): Promise<any> {
+    if (typeof createProprityDto.content === 'string') {
+      createProprityDto.content = JSON.parse(createProprityDto.content);
+    }
     if (file) {
       try {
         const uploadResult = await this.cloudUploadService.uploadImage(
@@ -50,39 +71,30 @@ export class PropritiesController {
         createProprityDto.thumbnail_url = uploadResult.secure_url;
 
         const checkAdmin = req.user.userId;
-        const result =  await this.propertyService.create(+checkAdmin, createProprityDto);
+        const result = await this.propertyService.create(
+          +checkAdmin,
+          createProprityDto,
+        );
 
-    
         return res.status(HttpStatus.CREATED).json({ id: result });
       } catch (error) {
-        return res.status(error.getStatus ? error.getStatus() : HttpStatus.BAD_REQUEST).json({
-          message: error.message || 'Lỗi khi tạo property',
-        });
+        return res
+          .status(error.getStatus ? error.getStatus() : HttpStatus.BAD_REQUEST)
+          .json({
+            message: error.message || 'Lỗi khi tạo property',
+          });
       }
     }
   }
 
+  @ApiOperation({ summary: 'Get all properties with search filters' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of properties found based on the search criteria', // You should replace this with the actual type of property response
+  })
   @Get()
-  @ApiBearerAuth()
-  async findAll(
-    @Query('page') page: number,
-    @Query('limit') limit: number,
-    @Query('search') search: string = '',
-    @Query('sort') sort: string = 'property_id:asc',
-    @Req() req,
-    @Res() res: Response,
-  ): Promise<void> {
-    try {
-      const properties = await this.propertyService.findAll({ page, limit, search, sort });
-  
-      res.status(200).json({
-        message: 'Properties retrieved successfully',
-        ...properties,
-      });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-      return;
-    }
+  async findAll(@Query() query: SearchDto) {
+    return this.propertyService.findAll(query);
   }
 
   @Get(':id')
@@ -99,62 +111,85 @@ export class PropritiesController {
         .json({ message: error.message });
     }
   }
-  // update
-  @Patch('/update-property/:id')
-  @UseGuards(JwtAuthGuard)
+   // update
+   @Patch('/update-property/:id')
+   @UseGuards(JwtAuthGuard)
+   @ApiBearerAuth()
+   @ApiConsumes('multipart/form-data')
+   @UseInterceptors(FileInterceptor('img'))
+   async update(
+     @Param('id') id: string, // Thay number thành string vì route params mặc định là string
+     @Body() updatePropertyDto: UpdatePropertyDto,
+     @Req() req,
+     @Res() res: Response,
+     @UploadedFile() file: Express.Multer.File,
+   ): Promise<void> {
+     // Thay Promise<string> thành Promise<void> vì không return string trực tiếp
+     try {
+       const userId = req.user.userId; // Lấy userId từ JWT
+       const propertyId = Number(id); // Chuyển id từ string sang number
+ 
+       // Kiểm tra xem property có tồn tại không
+      
+ 
+       // Xử lý upload ảnh nếu có file
+       if (file) {
+         const uploadResult = await this.cloudUploadService.uploadImage(
+           file,
+           'thumbnail',
+         );
+         updatePropertyDto.thumbnail_url = uploadResult.secure_url;
+ 
+         // Xóa ảnh cũ nếu tồn tại
+        //  if (currentProperty.thumbnail_url) {
+        //    const urlParts = currentProperty.thumbnail_url.split('/');
+        //    const publicId = urlParts.slice(-2).join('/').split('.')[0];
+        //    await this.cloudUploadService.deleteImage(publicId);
+        //  }
+       }
+ 
+       // Gọi service để cập nhật property
+       const updatedPropertyId = await this.propertyService.update(
+         userId, // userId trước
+         propertyId, // propertyId sau
+         updatePropertyDto,
+       );
+ 
+       // Trả về response thành công
+       res.status(200).json({
+         message: 'Update success',
+         propertyId: updatedPropertyId,
+       });
+     } catch (error) {
+       res.status(500).json({ message: error.message });
+       return;
+     }
+   }
+  // ===============================================================================================
+  // tắt banner
   @ApiBearerAuth()
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('img'))
-  async update(
-    @Param('id') id: string, // Thay number thành string vì route params mặc định là string
-    @Body() updatePropertyDto: UpdatePropertyDto,
+  @UseGuards(JwtAuthGuard)
+  @Patch('banners/:id/disable')
+  async disableBanner(
+    @Param('id')
+    id: number,
     @Req() req,
-    @Res() res: Response,
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<void> { // Thay Promise<string> thành Promise<void> vì không return string trực tiếp
-    try {
-      const userId = req.user.userId; // Lấy userId từ JWT
-      const propertyId = Number(id); // Chuyển id từ string sang number
-
-      // Kiểm tra xem property có tồn tại không
-      const currentProperty = await this.prisma.properties.findFirst({
-        where: { property_id: propertyId },
-      });
-      if (!currentProperty) {
-        res.status(404).json({ message: 'Property not found' });
-        return;
-      }
-
-      // Xử lý upload ảnh nếu có file
-      if (file) {
-        const uploadResult = await this.cloudUploadService.uploadImage(file, 'thumbnail');
-        updatePropertyDto.thumbnail_url = uploadResult.secure_url;
-
-        // Xóa ảnh cũ nếu tồn tại
-        if (currentProperty.thumbnail_url) {
-          const urlParts = currentProperty.thumbnail_url.split('/');
-          const publicId = urlParts.slice(-2).join('/').split('.')[0];
-          await this.cloudUploadService.deleteImage(publicId);
-        }
-      }
-
-      // Gọi service để cập nhật property
-      const updatedPropertyId = await this.propertyService.update(
-        userId, // userId trước
-        propertyId, // propertyId sau
-        updatePropertyDto,
-      );
-
-      // Trả về response thành công
-      res.status(200).json({
-        message: 'Update success',
-        propertyId: updatedPropertyId,
-      });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-      return;
-    }
+  ) {
+    return this.propertyService.disableBanner(Number(id),req.user.userId);
   }
+
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('banners/:id/enable')
+  async enableBanner(
+    @Param('id')
+    id: number,
+    @Req() req,
+  ) {
+    return this.propertyService.enableBanner(Number(id) , req.user.userId);
+  }
+
+//  ====================================================================================================
 
   // Di chuyển tài sản vào thùng rác
   @Patch('/move-to-trash/:id')
@@ -169,7 +204,10 @@ export class PropritiesController {
       const userId = req.user.userId;
       const propertyId = Number(id);
 
-      const movedPropertyId = await this.propertyService.moveToTrash(userId, propertyId);
+      const movedPropertyId = await this.propertyService.moveToTrash(
+        userId,
+        propertyId,
+      );
 
       res.status(200).json({
         message: 'Moved to trash successfully',
@@ -180,28 +218,7 @@ export class PropritiesController {
       return;
     }
   }
-  @Get('/trash')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async getTrashedProperties(
-    @Req() req,
-    @Res() res: Response,
-  ): Promise<void> {
-    try {
-      const userId = req.user.userId;
 
-      const trashedProperties = await this.propertyService.getTrashedProperties(userId);
-
-      console.log("trả về con ",trashedProperties);
-      res.status(200).json({
-        message: 'Retrieved trashed properties successfully',
-        data: trashedProperties,
-      });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-      return;
-    }
-  }
   // Khôi phục tài sản từ thùng rác
   @Patch('/restore-from-trash/:id')
   @UseGuards(JwtAuthGuard)
@@ -215,7 +232,10 @@ export class PropritiesController {
       const userId = req.user.userId;
       const propertyId = Number(id);
 
-      const restoredPropertyId = await this.propertyService.restoreFromTrash(userId, propertyId);
+      const restoredPropertyId = await this.propertyService.restoreFromTrash(
+        userId,
+        propertyId,
+      );
 
       res.status(200).json({
         message: 'Restored from trash successfully',

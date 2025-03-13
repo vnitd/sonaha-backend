@@ -1,22 +1,22 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsEnum, IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 export enum Status {
   AVAILABLE = 'available',
   SOLD = 'sold',
   PENDING = 'pending',
 }
+class CreateContentDto{
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  title : string;
 
-export enum Direction {
-  North = 'North',
-  Northeast = 'Northeast',
-  East = 'East',
-  Southeast = 'Southeast',
-  South = 'South',
-  Southwest = 'Southwest',
-  West = 'West',
-  Northwest = 'Northwest',
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  content: string;
 }
 
 export class CreatePropertyDto {
@@ -30,9 +30,18 @@ export class CreatePropertyDto {
   @IsNotEmpty({ message: 'Phải có tên dự án' })
   name: string;
 
-  @ApiProperty()
-  @IsNotEmpty({ message: 'Phải có Giá dự án' })
-  public_price: string;
+  @ApiProperty({ required: false, description: 'Giá tổng của dự án' })
+  @IsOptional()
+  @IsNumber({}, { message: 'Giá tổng phải là số' })
+  @Type(() => Number)
+  total_price?: number;
+
+  // Giá theo mét vuông
+  @ApiProperty({ required: false, description: 'Giá trên mỗi mét vuông' })
+  @IsOptional()
+  @IsNumber({}, { message: 'Giá theo mét vuông phải là số' })
+  @Type(() => Number)
+  price_per_m2?: number;
 
   @ApiProperty()
   @IsNotEmpty({ message: 'Phải có diện tích dự án' })
@@ -40,8 +49,8 @@ export class CreatePropertyDto {
   
   
   @Transform(({ value }) => (value === '' || value === undefined ? Status.AVAILABLE : value))
-  @ApiProperty()
-  
+  @ApiProperty({required : false})
+  @IsOptional()
   @IsEnum(Status)
   status?: Status;
 
@@ -50,7 +59,6 @@ export class CreatePropertyDto {
     format: 'binary',
     description: 'Ảnh của Sản Phẩm',
   })
-  @IsNotEmpty({ message: 'Phải có ảnh dự án' })
   img: any; 
 
   @ApiHideProperty()
@@ -73,9 +81,7 @@ export class CreatePropertyDto {
   house_number: string;
 
   @ApiProperty({ required: false })
-  @Transform(({ value }) => (value === '' || value === undefined ))
-  @IsEnum(Direction)
-  house_direction?: Direction;
+  house_direction?: string;
 
   @ApiProperty({ required: false })
   number_of_bedrooms?: number;
@@ -84,9 +90,7 @@ export class CreatePropertyDto {
   legal_status?: string;
 
   @ApiProperty({ required: false })
-  @Transform(({ value }) => (value === '' || value === undefined))
-  @IsEnum(Direction)
-  balcony_direction?: Direction;
+  balcony_direction?: string;
 
   @ApiProperty({ required: false })
   number_of_bathrooms?: number;
@@ -95,6 +99,27 @@ export class CreatePropertyDto {
   furniture?: string;
 
   @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
   road_surface?: string;
+  
+  @ApiProperty(
+    {
+      type: [CreateContentDto], 
+      isArray:true,
+      description: 'Danh sách nội dung với tiêu đề và nội dung',
+    }
+  )
+  @Transform(({ value }) => {
+    try {
+      return typeof value === "string" ? JSON.parse(value) : value;
+    } catch (e) {
+      return [];
+    }
+  })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({each:true})
+  @Type(()=>CreateContentDto)
+  content? : CreateContentDto[];
 }
