@@ -15,7 +15,6 @@ export class TypePropertiesService {
 
   async findAll() {
     return this.prisma.type_properties.findMany({
-      include: { properties: true },
     });
   }
 

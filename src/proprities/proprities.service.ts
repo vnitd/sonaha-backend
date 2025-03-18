@@ -38,7 +38,6 @@ export class PropertyService {
     if (!typeExists) {
       throw new Error(`Type Property với ID ${typeId} không tồn tại!`);
     }
-    const { total_price, price_per_m2, ...propertyData } = createProprityDto;
 
     if (
       checkAdmin.role_name === 'admin' ||
@@ -62,30 +61,12 @@ export class PropertyService {
           road_surface: createProprityDto.road_surface,
           house_number: createProprityDto.house_number,
           type_propertiesID: createProprityDto.type_propertiesID,
+          price: Number(createProprityDto.price),
         },
       });
-      if (total_price) {
-        await this.prisma.price.create({
-          data: {
-            propertyId: newProperty.property_id,
-            price_type: 'total',
-            amount: total_price,
-          },
-        });
-      }
-
-      if (price_per_m2) {
-        await this.prisma.price.create({
-          data: {
-            propertyId: newProperty.property_id,
-            price_type: 'per_m2',
-            amount: price_per_m2,
-          },
-        });
-      }
       
       const contents = await Promise.all(
-        createProprityDto.content.map(content =>
+        createProprityDto.content_property.map(content =>
           this.prisma.content_property.create({
               data:{
                 title : content.title,
@@ -108,7 +89,20 @@ export class PropertyService {
       throw new Error('Permission denied');
     }
   }
-
+  async findAllnoQuery() {
+    const properties = await this.prisma.properties.findMany({
+      where: {
+        deleted_at: null,
+      },
+      include:{
+        content_property: true,
+        property_images:true,
+        comments:true,
+      }
+    });
+    return properties;
+  }
+  
   async findAll(searchDto: SearchDto) {
     const {name, province, type_propertiesID, status, page, limit} = searchDto;
     const type_propertiesID_number = +type_propertiesID;
@@ -128,7 +122,6 @@ export class PropertyService {
       include:{
           content_property: true,
           property_images:true,
-          prices : true,
           comments:true,
       },
       skip: (+page - 1) * +limit,  // Calculate the skip based on page number
@@ -221,6 +214,7 @@ export class PropertyService {
         banner_status: true,
        },
        select: {
+        property_id:true,
         name: true,
         thumbnail_url: true,
         status: true,
@@ -240,6 +234,31 @@ export class PropertyService {
     throw new InternalServerErrorException(`Error fetching banners: ${error.message}`);
    }}
 
+   async findAllBanners() {
+    try {
+      const banners = await this.prisma.properties.findMany({
+        where: {
+          deleted_at: null,
+         },
+        select: {
+          property_id:true,
+          name: true,
+          thumbnail_url: true,
+          status: true,
+          banner_status: true,
+        },
+      });
+  
+      return {
+        message: 'Banners fetched successfully',
+        count: banners.length,
+        data: banners,
+      };
+    } catch (error) {
+      console.error('Error fetching banners:', error);
+      throw new InternalServerErrorException('Failed to fetch banners.');
+    }
+  }
 
 
   async disableBanner(propertyId: number, userId: number) {
@@ -472,7 +491,6 @@ export class PropertyService {
         this.prisma.content_property.deleteMany({
           where: { property_id: propertyId },
         }),
-        this.prisma.price.deleteMany({ where: { propertyId: propertyId } }),
         this.prisma.property_images.deleteMany({
           where: { property_id: propertyId },
         }),

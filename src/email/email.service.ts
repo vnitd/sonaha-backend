@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import {nodemailer,createTransport} from 'nodemailer'
-import {ConfigService} from '@nestjs/config'
+import { ConfigService } from '@nestjs/config';
+import nodemailer, { createTransport } from 'nodemailer';
+
+
 // cứ liên quan tới upload env lên thì cứ dùng nest config 
 @Injectable()
 export class EmailService{

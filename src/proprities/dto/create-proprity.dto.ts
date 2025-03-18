@@ -34,14 +34,8 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsNumber({}, { message: 'Giá tổng phải là số' })
   @Type(() => Number)
-  total_price?: number;
+  price?: number;
 
-  // Giá theo mét vuông
-  @ApiProperty({ required: false, description: 'Giá trên mỗi mét vuông' })
-  @IsOptional()
-  @IsNumber({}, { message: 'Giá theo mét vuông phải là số' })
-  @Type(() => Number)
-  price_per_m2?: number;
 
   @ApiProperty()
   @IsNotEmpty({ message: 'Phải có diện tích dự án' })
@@ -121,5 +115,5 @@ export class CreatePropertyDto {
   @IsOptional()
   @ValidateNested({each:true})
   @Type(()=>CreateContentDto)
-  content? : CreateContentDto[];
+  content_property? : CreateContentDto[];
 }

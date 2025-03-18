@@ -1,31 +1,50 @@
 import { Inject, Injectable } from "@nestjs/common";
-import {UploadApiResponse } from "cloudinary";
+import { UploadApiResponse } from "cloudinary";
+import * as sharp from "sharp";
+import { Readable } from "stream";
 
 // tiến hành upload lên cloud, nên mình sẽ chia từng mảnh nhỏ
 // tí mình sẽ import cái này vào cái module tổng
 // từ đó có thể xài cho nhiều thằng 
+async function compressImage(file: Express.Multer.File): Promise<Buffer> {
+   return sharp(file.buffer)
+     .resize(1920, 1080, { fit: "inside" }) // Resize tối đa 1920x1080
+     .toFormat("jpeg", { quality: 80 }) // Chuyển sang JPEG, chất lượng 80%
+     .toBuffer();
+ }
+ 
 @Injectable() 
 export class CloudUploadService{
    constructor(@Inject('CLOUDINARY') private readonly cloudinary){}
    async uploadImage(file: Express.Multer.File, folder: string): Promise<UploadApiResponse> {
-      return new Promise((resolve,reject)=>{
-         const uploadStream = this.cloudinary.uploader.upload_stream(
-            // chia nhỏ, defile folder trên cloudinary
-            {folder},
-            // tiến hành upload hình lên cloudinary
-            (error:any,result:UploadApiResponse)=>{
-               if (error) {
-                  reject(error)
-                  throw new Error('Lỗi'); 
-               }else{
-                  // nếu có cái trả về thì lấy ở đây
-                  resolve(result);
-               }
+      const compressedBuffer = await compressImage(file);
+    
+      return new Promise((resolve, reject) => {
+        const uploadStream = this.cloudinary.uploader.upload_stream(
+          {
+            folder,
+            resource_type: 'auto',
+            chunk_size: 6000000, // Chia nhỏ thành 6MB
+            timeout: 60000,
+          },
+          (error: any, result: UploadApiResponse) => {
+            if (error) {
+              reject(new Error(`Lỗi upload: ${error.message}`));
+            } else {
+              resolve(result);
             }
-         );
-         uploadStream.end(file.buffer)
-      })
-   }
+          }
+        );
+    
+        const stream = new Readable();
+        stream.push(compressedBuffer);
+        stream.push(null);
+        stream.pipe(uploadStream);
+      });
+    }
+
+  
+
    async deleteImage(publicId: string): Promise<any> {
       try {
          // Thay thế %20 bằng khoảng trắng

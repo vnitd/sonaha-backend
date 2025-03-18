@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Status } from './create-proprity.dto'; // Assuming you have Status enum imported
 
 // src/search/dto/search.dto.ts
@@ -43,4 +43,10 @@ export class SearchDto {
   @Type(() => Number) 
   @Max(100) // You can set a maximum limit for performance reasons
   limit?: number = 10;
+
+  @ApiProperty({ required: false, description: 'Get all properties' })
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsOptional()
+  @IsBoolean()
+  all?: boolean;
 }

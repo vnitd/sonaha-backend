@@ -68,6 +68,7 @@ model properties {
   district            String?                      @db.VarChar(255)
   ward                String?                      @db.VarChar(255)
   house_direction     String?
+  price               Int?
   number_of_bedrooms  Int?
   legal_status        String?                      @db.VarChar(255)
   balcony_direction   String?
@@ -82,19 +83,10 @@ model properties {
   comments            comments[]
   property_images     property_images[]
   content_property    content_property[]
-  prices              Price[]
 
   @@index([type_propertiesID], map: "type_propertiesID")
-}
-model Price {
-  id          Int      @id @default(autoincrement())
-  propertyId  Int
-  price_type  String   // "total" hoặc "per_m2"
-  amount      Float   // Giá trị
-  properties  properties @relation(fields: [propertyId], references: [property_id])  
-  @@index([propertyId], map: "properties")
-}
 
+}
 model property_images {
   image_id    Int        @id @default(autoincrement())
   property_id Int

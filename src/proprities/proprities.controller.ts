@@ -30,6 +30,7 @@ export class PropritiesController {
     private readonly propertyService: PropertyService,
     private readonly cloudUploadService: CloudUploadService,
   ) {}
+  
 
   @Get('/banner')
   async findBanner() {
@@ -39,7 +40,16 @@ export class PropritiesController {
       console.log(error)
     }
   }
-  
+
+  @Get('/AllBanner')
+  async findallbanner() {
+    try {
+      return this.propertyService.findAllBanners();
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   @Get('/trash')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -59,8 +69,8 @@ export class PropritiesController {
     @Res() res: Response,
     @Req() req,
   ): Promise<any> {
-    if (typeof createProprityDto.content === 'string') {
-      createProprityDto.content = JSON.parse(createProprityDto.content);
+    if (typeof createProprityDto.content_property === 'string') {
+      createProprityDto.content_property = JSON.parse(createProprityDto.content_property);
     }
     if (file) {
       try {
@@ -94,6 +104,9 @@ export class PropritiesController {
   })
   @Get()
   async findAll(@Query() query: SearchDto) {
+    if (query.all) {
+      return this.propertyService.findAllnoQuery();
+    }
     return this.propertyService.findAll(query);
   }
 
