@@ -15,6 +15,7 @@ import { StatsModule } from './stats/stats.module';
 import { TypePropertiesController } from './type-properties/type-properties.controller';
 import { TypePropertiesService } from './type-properties/type-properties.service';
 import { UserModule } from './user/user.module';
+import { ContentModule } from './content/content.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,7 +30,8 @@ import { UserModule } from './user/user.module';
     NotificationModule,
     StatsModule,
     ProvinceModule,
-    ContactModule,  
+    ContactModule,
+    ContentModule,  
   ],
   exports: [PrismaService],
   controllers: [AppController, TypePropertiesController],

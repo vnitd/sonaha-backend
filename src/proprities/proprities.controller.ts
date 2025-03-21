@@ -69,9 +69,6 @@ export class PropritiesController {
     @Res() res: Response,
     @Req() req,
   ): Promise<any> {
-    if (typeof createProprityDto.content_property === 'string') {
-      createProprityDto.content_property = JSON.parse(createProprityDto.content_property);
-    }
     if (file) {
       try {
         const uploadResult = await this.cloudUploadService.uploadImage(

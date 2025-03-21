@@ -17,6 +17,7 @@ export class SearchDto {
 
   @ApiProperty({ required: false, description: 'Property type ID' })
   @IsOptional()
+  @Transform(({ value }) => parseInt(value))
   @IsInt()
   type_propertiesID?: number;
 

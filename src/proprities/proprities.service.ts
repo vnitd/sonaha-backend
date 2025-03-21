@@ -64,19 +64,6 @@ export class PropertyService {
           price: Number(createProprityDto.price),
         },
       });
-      
-      const contents = await Promise.all(
-        createProprityDto.content_property.map(content =>
-          this.prisma.content_property.create({
-              data:{
-                title : content.title,
-                content : content.content,
-                property_id: newProperty.property_id,
-              }
-            }
-          )
-        )
-      )
 
       return {
         message: 'Property created successfully',

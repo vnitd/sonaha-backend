@@ -1,22 +1,11 @@
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export enum Status {
   AVAILABLE = 'available',
   SOLD = 'sold',
   PENDING = 'pending',
-}
-class CreateContentDto{
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  title : string;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsString()
-  content: string;
 }
 
 export class CreatePropertyDto {
@@ -96,24 +85,4 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsString()
   road_surface?: string;
-  
-  @ApiProperty(
-    {
-      type: [CreateContentDto], 
-      isArray:true,
-      description: 'Danh sách nội dung với tiêu đề và nội dung',
-    }
-  )
-  @Transform(({ value }) => {
-    try {
-      return typeof value === "string" ? JSON.parse(value) : value;
-    } catch (e) {
-      return [];
-    }
-  })
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({each:true})
-  @Type(()=>CreateContentDto)
-  content_property? : CreateContentDto[];
 }
